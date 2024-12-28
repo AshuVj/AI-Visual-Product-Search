@@ -1,0 +1,109 @@
+@import "tailwindcss/base";
+@import "tailwindcss/components";
+@import "tailwindcss/utilities";
+
+body {
+    overflow-x: hidden;
+  }
+  
+/* Global button hover animations */
+button:hover {
+    transform: scale(1.1);
+    transition: transform 0.3s ease, background-color 0.3s ease;
+    background-color: #2563eb; /* Tailwind Blue-600 equivalent */
+}
+
+/* index.css */
+.result-card {
+    transition: transform 0.2s, box-shadow 0.2s;
+  }
+  
+  .result-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+  }
+  
+  .error-display button {
+    transition: background-color 0.2s ease;
+  }
+  /* For the Product Card styling */
+.product-card {
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+  }
+  
+  .product-card:hover {
+    transform: translateY(-8px);
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+  }
+  
+  .product-card img {
+    border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+  }
+  
+  .product-card .p-4 {
+    padding: 16px;
+    text-align: center;
+  }
+/* Error Display Styles */
+.error-display {
+    background-color: #fef2f2; /* Red-50 */
+    border: 1px solid #fecaca; /* Red-200 */
+    color: #b91c1c; /* Red-700 */
+    padding: 16px;
+    border-radius: 8px;
+    text-align: center;
+    position: relative;
+  }
+  
+  .error-display .illustration {
+    width: 100px;
+    margin: 0 auto 1rem;
+  }
+  
+  .error-display .retry-button {
+    margin-top: 1rem;
+    padding: 8px 16px;
+    background-color: #ef4444; /* Red-500 */
+    color: #fff;
+    border-radius: 4px;
+    font-size: 0.875rem;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+  }
+  
+  .error-display .retry-button:hover {
+    background-color: #dc2626; /* Red-600 */
+  }
+/* Enhanced Spinner Animation */
+.loader-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 200px;
+  }
+  
+  .loader {
+    width: 40px;
+    height: 40px;
+    border: 4px solid #e5e7eb; /* Gray-200 */
+    border-top-color: #6366f1; /* Indigo-500 */
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+  }
+  
+  @keyframes spin {
+    to {
+      transform: rotate(360deg);
+    }
+  }
+  
+  .loader-message {
+    margin-top: 1rem;
+    font-size: 1rem;
+    color: #4b5563; /* Gray-600 */
+  }
+      

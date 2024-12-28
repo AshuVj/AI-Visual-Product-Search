@@ -1,0 +1,8 @@
+echo "AI-Visual-Product-Search--frontend/node_modules/
+AI-Visual-Product-Search--frontend/.env
+AI-Visual-Product-Search--frontend/.bolt/
+AI-Visual-Product-Search--backend/venv/
+AI-Visual-Product-Search--backend/.env
+AI-Visual-Product-Search--backend/__pycache__/
+*.log
+.DS_Store" > .gitignore
