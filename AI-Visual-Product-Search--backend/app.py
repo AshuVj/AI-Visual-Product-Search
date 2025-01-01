@@ -43,7 +43,6 @@ GCS_CX = os.getenv("GCS_CX")
 EBAY_APPID = os.getenv('EBAY_APPID')
 EBAY_DEVID = os.getenv('EBAY_DEVID')
 EBAY_CERTID = os.getenv('EBAY_CERTID')
-IPAGEO_GEOLOCATION_API_KEY = os.getenv("IPAGEO_GEOLOCATION_API_KEY")  # Your iPageoGeolocation API Key
 
 ###############################################################################
 # LOGGING SETUP
