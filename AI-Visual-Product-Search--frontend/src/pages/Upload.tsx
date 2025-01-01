@@ -1,19 +1,18 @@
+// src/pages/Upload.tsx
+
 import { useState } from 'react';
-import { useSelector } from 'react-redux';
 import ImageDropzone from '../components/ImageDropzone';
 import ProductCard from '../components/ProductCard';
 import Loader from '../components/Loader';
 import ErrorDisplay from '../components/ErrorDisplay';
 import { useSearch } from '../context/SearchContext';
 import { analyzeImage } from '../utils/api';
-import type { RootState } from '../store';
 
 export default function Upload() {
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const { searchResults, setSearchResults, searchImage, setSearchImage } =
     useSearch();
-  const { countryCode, currency } = useSelector((state: RootState) => state.geolocation);
 
   const handleImageUpload = async (file: File) => {
     setIsAnalyzing(true);
@@ -24,8 +23,8 @@ export default function Upload() {
       const imageUrl = URL.createObjectURL(file);
       setSearchImage(imageUrl);
 
-      // Analyze image with geolocation parameters
-      const data = await analyzeImage(file, countryCode, currency);
+      // Analyze image without geolocation parameters
+      const data = await analyzeImage(file);
       setSearchResults(data.products || []);
     } catch (err) {
       setError(

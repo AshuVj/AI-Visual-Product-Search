@@ -1,14 +1,18 @@
 // src/components/ProductList.tsx
 
 import React, { useState } from 'react';
-import { useSelector } from 'react-redux';
-import { RootState } from '../store';
 import axios from 'axios';
 import ProductCard from './ProductCard';
 import type { Product } from '../types'; // Import the Product interface
 
 const ProductList: React.FC = () => {
-  const { countryCode, currency } = useSelector((state: RootState) => state.geolocation);
+  // Removed geolocation selectors
+  // const { countryCode, currency } = useSelector((state: RootState) => state.geolocation);
+  
+  // Optionally, set default values if needed
+  const defaultCountryCode = 'US';
+  const defaultCurrency = 'USD';
+  
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
@@ -42,9 +46,15 @@ const ProductList: React.FC = () => {
           headers: {
             'Content-Type': 'multipart/form-data',
           },
+          // Removed geolocation params
+          // params: {
+          //   countryCode,
+          //   currency,
+          // },
           params: {
-            countryCode,
-            currency,
+            // If backend still expects countryCode and currency, provide default values
+            countryCode: defaultCountryCode,
+            currency: defaultCurrency,
           },
         });
       } else {
@@ -52,9 +62,14 @@ const ProductList: React.FC = () => {
         response = await axios.post('/search', { 
           query: searchTerm 
         }, {
+          // Removed geolocation params
+          // params: {
+          //   countryCode,
+          //   currency,
+          // },
           params: {
-            countryCode,
-            currency,
+            countryCode: defaultCountryCode,
+            currency: defaultCurrency,
           },
         });
       }

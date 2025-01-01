@@ -1,3 +1,5 @@
+// src/utils/api.ts
+
 import axios from 'axios';
 import type { Product } from '../types';
 import { store } from '../store';
@@ -65,7 +67,15 @@ api.interceptors.response.use(
 // ---------------------------------------------
 // ANALYZE IMAGE
 // ---------------------------------------------
-export const analyzeImage = async (file: File, countryCode: string, currency: string) => {
+// src/utils/api.ts
+
+// ...
+
+export const analyzeImage = async (file: File) => {
+  // Set default values
+  const defaultCountryCode = 'US';
+  const defaultCurrency = 'USD';
+
   // Upload a file to /analyze-image with query params
   const formData = new FormData();
   formData.append('image', file);
@@ -73,7 +83,10 @@ export const analyzeImage = async (file: File, countryCode: string, currency: st
   // Make POST request with query params
   const response = await api.post('/analyze-image', formData, {
     headers: { 'Content-Type': 'multipart/form-data' },
-    params: { countryCode, currency },
+    params: { 
+      countryCode: defaultCountryCode, 
+      currency: defaultCurrency 
+    },
   });
   // Return the data from backend
   return response.data; 

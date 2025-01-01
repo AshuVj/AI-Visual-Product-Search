@@ -22,11 +22,11 @@ from werkzeug.utils import secure_filename
 from datetime import datetime, timedelta
 from typing import List, Dict
 
-from scrapers import EbaySearcher  # Ensure the path is correct
-
-############## Suppress Mongodb logs ################
-logging.getLogger("pymongo").setLevel(logging.WARNING)
-#####################################################
+import google.cloud.vision as vision
+import json
+import requests
+from bs4 import BeautifulSoup
+from urllib.parse import urlparse
 
 ###############################################################################
 # CONFIGURATION
@@ -40,6 +40,9 @@ JWT_SECRET_KEY = os.getenv("JWT_SECRET_KEY")
 BING_SUBSCRIPTION_KEY = os.getenv("BING_SUBSCRIPTION_KEY")
 GCS_API_KEY = os.getenv("GCS_API_KEY")
 GCS_CX = os.getenv("GCS_CX")
+EBAY_APPID = os.getenv('EBAY_APPID')
+EBAY_DEVID = os.getenv('EBAY_DEVID')
+EBAY_CERTID = os.getenv('EBAY_CERTID')
 IPAGEO_GEOLOCATION_API_KEY = os.getenv("IPAGEO_GEOLOCATION_API_KEY")  # Your iPageoGeolocation API Key
 
 ###############################################################################
@@ -83,9 +86,6 @@ app.config["MAX_CONTENT_LENGTH"] = 5 * 1024 * 1024  # 5 MB
 ###############################################################################
 # REAL GOOGLE VISION DETECTION
 ###############################################################################
-import google.cloud.vision as vision
-# Ensure the environment variable for Google Vision is set:
-# os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = r"path_to_service_account.json"
 
 def analyze_image_with_vision(image_path: str) -> Dict:
     """
@@ -177,6 +177,7 @@ def analyze_image_with_vision(image_path: str) -> Dict:
 ###############################################################################
 # REAL BING VISUAL SEARCH
 ###############################################################################
+
 async def fetch_bing_similar_products(image_path: str, api_key: str) -> List[Dict]:
     """
     Uses Bing Visual Search to find similar products.
@@ -207,9 +208,10 @@ async def fetch_bing_similar_products(image_path: str, api_key: str) -> List[Dic
                                     host_page_url = item.get('hostPageUrl', '')
                                     # Ensure the URL has the protocol
                                     source_link = host_page_url if host_page_url.startswith(('http://', 'https://')) else f"https://{host_page_url}"
+                                    price = float(item.get('price', 0)) if item.get('price') else 0  # Extract price if available
                                     products.append({
                                         'title': item.get('name', ''),
-                                        'price': float(item.get('price', 0)) if item.get('price') else 0,
+                                        'price': price,
                                         'currency': 'USD',  # Assuming USD, adjust if necessary
                                         'platform': 'Bing Visual Search',
                                         'imageUrl': item.get('thumbnailUrl', ''),
@@ -228,17 +230,63 @@ async def fetch_bing_similar_products(image_path: str, api_key: str) -> List[Dic
 ###############################################################################
 # REAL GOOGLE CUSTOM SEARCH
 ###############################################################################
+
+def extract_price(text: str) -> float:
+    """
+    Extracts the most plausible price from the given text.
+    Prioritizes higher prices and excludes discount amounts.
+    """
+    # Define regex patterns to match prices not followed by 'off' or 'discount'
+    price_patterns = [
+        r'₹\s?([\d,]+\.?\d*)\s?(?!off|discount)',          # Indian Rupee not followed by 'off' or 'discount'
+        r'\bINR\s?([\d,]+\.?\d*)\b(?!\s?off|discount)',    # INR with word boundary not followed by 'off' or 'discount'
+        r'€\s?([\d,]+\.?\d*)',                            # Euro
+        r'\bEUR\s?([\d,]+\.?\d*)\b',                      # EUR with word boundary
+        r'£\s?([\d,]+\.?\d*)',                            # British Pound
+        r'\bGBP\s?([\d,]+\.?\d*)\b',                      # GBP with word boundary
+        r'¥\s?([\d,]+\.?\d*)',                            # Japanese Yen
+        r'\bJPY\s?([\d,]+\.?\d*)\b',                      # JPY with word boundary
+        r'\$\s?([\d,]+\.?\d*)',                           # USD symbol
+        r'\bUSD\s?([\d,]+\.?\d*)\b',                      # USD with word boundary
+        # Add more patterns as needed
+    ]
+
+    prices = []
+    for pattern in price_patterns:
+        matches = re.findall(pattern, text, re.IGNORECASE)
+        for match in matches:
+            price_str = match.replace(',', '')
+            try:
+                price = float(price_str)
+                # Implement a sanity check (e.g., prices between 100 and 1,000,000)
+                if 100.0 <= price <= 1000000.0:
+                    prices.append(price)
+                else:
+                    logger.debug(f"Excluded unrealistic price: {price}")
+            except ValueError:
+                logger.debug(f"Failed to convert price string to float: '{match}'")
+                continue
+
+    if prices:
+        # Return the highest plausible price to avoid discounts
+        selected_price = max(prices)
+        logger.debug(f"Selected price: {selected_price}")
+        return selected_price
+
+    logger.debug("No valid price found in text.")
+    return 0.0  # Default if no price found
+
 async def fetch_google_custom_search(search_term: str, api_key: str, cx: str) -> List[Dict]:
     """
-    Uses Google Custom Search to find products.
+    Fetches search results from Google Custom Search API and extracts product information.
     """
     endpoint = "https://www.googleapis.com/customsearch/v1"
     params = {
         'q': search_term,
         'key': api_key,
         'cx': cx,
-        'searchType': 'image',  # Using 'image' to get image results
-        'num': 10,  # Number of results to fetch
+        'searchType': 'image',
+        'num': 10,
     }
 
     async with aiohttp.ClientSession() as session:
@@ -246,108 +294,82 @@ async def fetch_google_custom_search(search_term: str, api_key: str, cx: str) ->
             async with session.get(endpoint, params=params) as response:
                 if response.status == 200:
                     data = await response.json()
-                    logger.debug(f"[GCS] Response Data: {data}")
                     items = data.get('items', [])
                     products = []
                     for it in items:
                         title = it.get('title', '')
-                        image_url = it.get('link', '')  # Image URL
+                        image_url = it.get('link', '')  # main image
                         snippet = it.get('snippet', '')
                         pagemap = it.get('pagemap', {})
-
-                        # Extract sourceLink from 'image.contextLink' if available
                         source_link = it.get('image', {}).get('contextLink', '')
 
-                        # Validate and ensure source_link points directly to the product
-                        if not source_link.startswith(('http://', 'https://')):
-                            logger.warning(f"Invalid or missing sourceLink for item: '{title}'. Attempting to extract from snippet.")
-                            # Attempt to extract URL from snippet using regex
-                            url_match = re.search(r'(https?://\S+)', snippet)
-                            if url_match:
-                                source_link = url_match.group(1)
-                            else:
-                                logger.warning(f"Unable to extract sourceLink for item: '{title}'. Skipping.")
-                                continue  # Skip items without valid sourceLink
+                        logger.debug(f"[GCS] Processing item: {title}")
+                        logger.debug(f"[GCS] Pagemap: {pagemap}")
 
-                        # Initialize price
+                        if not source_link.startswith(('http://', 'https://')):
+                            logger.warning(f"Invalid sourceLink for GCS item: '{title}'. Skipping.")
+                            continue
+
                         price = 0.0
 
-                        # Attempt to extract price from pagemap 'offer'
+                        # Attempt price from pagemap.offer
                         if 'offer' in pagemap and isinstance(pagemap['offer'], list) and len(pagemap['offer']) > 0:
                             offer = pagemap['offer'][0]
                             if 'price' in offer:
                                 try:
                                     price = float(offer['price'])
+                                    logger.debug(f"[GCS] Extracted price from offer: {price}")
                                 except (ValueError, TypeError):
                                     price = 0.0
+                                    logger.error(f"[GCS] Failed to convert offer price for item '{title}'")
 
-                        # If price not found in pagemap, extract using regex from snippet
+                        # Attempt price from pagemap.product
+                        if price == 0.0 and 'product' in pagemap and isinstance(pagemap['product'], list) and len(pagemap['product']) > 0:
+                            product = pagemap['product'][0]
+                            if 'price' in product:
+                                try:
+                                    price = float(product['price'])
+                                    logger.debug(f"[GCS] Extracted price from product: {price}")
+                                except (ValueError, TypeError):
+                                    price = 0.0
+                                    logger.error(f"[GCS] Failed to convert product price for item '{title}'")
+
+                        # If price still not found, try snippet
                         if price == 0.0:
                             price = extract_price(snippet)
+                            logger.debug(f"[GCS] Extracted price from snippet: {price}")
 
-                        # Ensure imageUrl is valid
+                        # Force image URL check
                         if not image_url.startswith(('http://', 'https://')):
-                            logger.warning(f"Invalid imageUrl for item: '{title}'. Skipping.")
-                            continue  # Skip items with invalid imageUrl
-
-                        # Ensure source_link is valid and unique
-                        if not source_link.startswith(('http://', 'https://')):
-                            logger.warning(f"Missing sourceLink for item: '{title}'. Skipping.")
+                            logger.warning(f"Invalid imageUrl for GCS item: '{title}'. Skipping.")
                             continue
 
-                        # Assign a unique ID by prefixing with 'gcs_'
-                        unique_id = f"gcs_{hash(source_link)}"  # Using hash for uniqueness
+                        # Hardcode currency to 'INR'
+                        product_currency = 'INR'
 
-                        # Assign currency based on the search context or default to 'USD'
-                        currency = 'USD'  # Adjust as necessary
+                        # Create a unique ID
+                        unique_id = f"gcs_{hash(source_link)}"
 
+                        # Add product to the list
                         products.append({
-                            'id': unique_id,  # Unique ID with 'gcs_' prefix
+                            'id': unique_id,
                             'title': title,
                             'price': price,
-                            'currency': currency,
+                            'currency': product_currency,
                             'platform': 'Google Custom Search',
                             'imageUrl': image_url,
                             'sourceLink': source_link,
                         })
-                    logger.debug(f"[GCS] Parsed Products: {products}")
+                        logger.debug(f"[GCS] Added product: {unique_id}, Price: {price} {product_currency}")
+
+                    logger.debug(f"[GCS] Total parsed products: {len(products)}")
                     return products
                 else:
-                    logger.error(f"[GCS] HTTP {response.status}")
+                    logger.error(f"[GCS] HTTP {response.status} for search term '{search_term}'")
                     return []
         except Exception as ex:
-            logger.error(f"[GCS] Error: {str(ex)}")
+            logger.error(f"[GCS] Error during search: {str(ex)}")
             return []
-
-def extract_price(text: str) -> float:
-    """
-    Extracts the first occurrence of a price from the given text.
-    Supports multiple currency symbols.
-    """
-    # Define regex patterns for different currencies
-    price_patterns = [
-        r'₹\s?([\d,]+\.?\d*)',          # Indian Rupee
-        r'\$\s?([\d,]+\.?\d*)',         # US Dollar
-        r'€\s?([\d,]+\.?\d*)',         # Euro
-        r'£\s?([\d,]+\.?\d*)',         # British Pound
-        r'¥\s?([\d,]+\.?\d*)',         # Japanese Yen
-        r'USD\s?([\d,]+\.?\d*)',       # USD without $
-        r'EUR\s?([\d,]+\.?\d*)',       # EUR without €
-        r'GBP\s?([\d,]+\.?\d*)',       # GBP without £
-        r'JPY\s?([\d,]+\.?\d*)',       # JPY without ¥
-        # Add more patterns as needed
-    ]
-
-    for pattern in price_patterns:
-        match = re.search(pattern, text)
-        if match:
-            # Remove commas and convert to float
-            price_str = match.group(1).replace(',', '')
-            try:
-                return float(price_str)
-            except ValueError:
-                return 0.0
-    return 0.0  # Default if no price found
 
 ###############################################################################
 # AUTH RESOURCES
@@ -401,7 +423,7 @@ class Login(Resource):
 
 class RefreshTokenResource(Resource):
     @jwt_required(refresh=True)
-    def post(self):
+    async def post(self):
         current_user = get_jwt_identity()
         new_access_token = create_access_token(identity=current_user)
         logger.info(f"Access token refreshed for user: {current_user}")
@@ -410,13 +432,9 @@ class RefreshTokenResource(Resource):
 ###############################################################################
 # WISHLIST RESOURCE
 ###############################################################################
-# app.py
-
-# ... [Other imports and configurations]
-
 class ProtectedWishlist(Resource):
     @jwt_required()
-    def get(self):
+    async def get(self):
         user_email = get_jwt_identity()
         try:
             wishlist = list(db["wishlist"].find(
@@ -439,7 +457,7 @@ class ProtectedWishlist(Resource):
             return {"error": "Failed to fetch wishlist"}, 500
 
     @jwt_required()
-    def post(self):
+    async def post(self):
         user_email = get_jwt_identity()
         data = request.get_json()
 
@@ -490,6 +508,7 @@ class ProtectedWishlist(Resource):
             "id": data["itemId"],
             "title": data["title"],
             "price": data["price"],
+            "currency": data.get("currency", "INR"),  # Include currency if available
             "platform": data["platform"],
             "imageUrl": data["imageUrl"],
             "sourceLink": data["sourceLink"],  # Ensure protocol
@@ -500,7 +519,7 @@ class ProtectedWishlist(Resource):
         }, 201
 
     @jwt_required()
-    def delete(self):
+    async def delete(self):
         user_email = get_jwt_identity()
         item_id = request.args.get('itemId')
         if not item_id:
@@ -594,8 +613,10 @@ class ImageAnalysis(Resource):
                         ebay_search_term_cleaned = "Shoe"  # Fallback
 
                     # Fetch user's country code and currency from geolocation data
-                    user_country_code = request.args.get('countryCode', 'US')  # Adjust as needed
-                    user_currency = request.args.get('currency', 'USD')  # Adjust as needed
+                    # Since geolocation is being removed, set defaults or derive from other sources
+                    # For example, default to 'IN' and 'INR'
+                    user_country_code = 'IN'  # India
+                    user_currency = 'INR'
 
                     ebay_results = await ebay_scraper.search_products(ebay_search_term_cleaned, user_country_code, user_currency, max_results=10)
                     logger.info(f"[EBAY] Found {len(ebay_results)} results for '{ebay_search_term_cleaned}'.")
@@ -642,13 +663,12 @@ class ImageAnalysis(Resource):
                 )
                 logger.info(f"[FINAL] Final unique results count: {len(final_results)}")
 
-                # Filter out products without valid 'imageUrl' and 'sourceLink'
-                final_results = [
-                    product for product in final_results 
-                    if product.get('imageUrl') and product['imageUrl'].startswith(('http://', 'https://'))
-                    and product.get('sourceLink') and product['sourceLink'].startswith(('http://', 'https://'))
-                ]
-                logger.info(f"[FINAL] Results after filtering invalid imageUrl and sourceLink: {len(final_results)}")
+                # Optionally, include products with price=0.0 by not filtering them out
+                # If you still want to filter out, uncomment the following lines
+                # final_results = [
+                #     product for product in final_results 
+                #     if product.get('price', 0) > 0
+                # ]
 
                 # Further enhance product data
                 for product in final_results:
@@ -679,7 +699,6 @@ class ImageAnalysis(Resource):
         except Exception as e:
             logger.error(f"[Analysis Error] {str(e)}")
             return {"error": f"Analysis failed: {str(e)}"}, 500
-
 
 ###############################################################################
 # WELCOME

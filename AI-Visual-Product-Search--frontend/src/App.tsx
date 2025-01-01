@@ -1,12 +1,10 @@
 // src/App.tsx
 
-import { useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
-import { Provider, useDispatch } from 'react-redux';
+import { Provider } from 'react-redux';
 import { store } from './store';
 import { SearchProvider } from './context/SearchContext';
-import { setGeolocation } from './store/GeolocationSlice';
-import { useGeolocation } from './hooks/useGeolocation';
+// import { setGeolocation } from './store/GeolocationSlice'; // Removed
 
 import Header from './components/Header';
 import ProductList from './components/ProductList';
@@ -20,14 +18,14 @@ import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 
 function AppContent() {
-  const dispatch = useDispatch();
-  const { countryCode, currency } = useGeolocation();
+  // Removed geolocation hook and dispatch
+  // const { countryCode, currency } = useGeolocation();
 
-  useEffect(() => {
-    if (countryCode && currency) {
-      dispatch(setGeolocation({ countryCode, currency }));
-    }
-  }, [countryCode, currency, dispatch]);
+  // useEffect(() => {
+  //   if (countryCode && currency) {
+  //     dispatch(setGeolocation({ countryCode, currency }));
+  //   }
+  // }, [countryCode, currency, dispatch]);
 
   return (
     <div className="min-h-screen bg-gray-50">

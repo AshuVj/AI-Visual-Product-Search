@@ -1,18 +1,16 @@
 import os
 import re
-import yaml
 import logging
-import aiohttp
 from typing import List, Dict
 from ebaysdk.finding import Connection as Finding
 from ebaysdk.exception import ConnectionError
-from utils import convert_currency  # Ensure this exists
-from urllib.parse import urljoin
 
+# --------------------------------------------------
+# scrapers.py
+# --------------------------------------------------
 logger = logging.getLogger(__name__)
 
 def clean_price(price_str):
-    """Clean price strings to remove currency symbols and convert to standard format."""
     cleaned_price = re.sub(r'[^\d.]', '', price_str)
     try:
         return float(cleaned_price)
@@ -25,15 +23,11 @@ class EbaySearcher:
         self.devid = os.getenv('EBAY_DEVID')
         self.certid = os.getenv('EBAY_CERTID')
         if not all([self.app_id, self.devid, self.certid]):
-            logger.error("Ebay API credentials are not fully set in environment variables.")
-            raise ValueError("Ebay API credentials are required.")
+            logger.error("eBay API credentials are not fully set in environment variables.")
+            raise ValueError("eBay API credentials are required.")
         self.api = Finding(appid=self.app_id, devid=self.devid, certid=self.certid, config_file=None)
 
     async def search_products(self, search_term: str, country_code: str, currency: str, max_results: int = 10) -> List[Dict]:
-        """
-        Searches eBay for products based on the search term and seller location.
-        Converts prices to the desired currency.
-        """
         try:
             response = self.api.execute('findItemsAdvanced', {
                 'keywords': search_term,
@@ -55,9 +49,8 @@ class EbaySearcher:
                 title = item.get('title', '')
                 image_url = item.get('galleryURL', '')
                 source_link = item.get('viewItemURL', '')
-                price = float(item.get('sellingStatus', {}).get('currentPrice', {}).get('__value__', 0))
-                seller_info = item.get('sellerInfo', {})
-                seller_location = seller_info.get('sellerUserLocation', {}).get('location', '')
+                price = float(item.get('sellingStatus', {}).get('currentPrice', {}).get('value', 0))
+                currency_id = item.get('sellingStatus', {}).get('currentPrice', {}).get('currencyId', 'USD')
 
                 # Validate URLs
                 if not image_url.startswith(('http://', 'https://')):
@@ -70,26 +63,21 @@ class EbaySearcher:
                 # Assign a unique ID by prefixing with 'ebay_'
                 item_id = item.get('itemId', '')
                 unique_id = f"ebay_{item_id}"
-
-                # Convert price to desired currency if needed
-                if currency != 'USD':  # Assuming eBay returns prices in USD
-                    converted_price = await convert_currency(price, 'USD', currency)
-                    product_currency = currency
-                else:
-                    converted_price = price
-                    product_currency = 'USD'
-
-                logger.debug(f"[eBay] Product: {title}, Price: {converted_price} {product_currency}")
+                converted_price = price  # Assuming no conversion needed; handled in frontend if necessary
 
                 products.append({
                     'id': unique_id,
                     'title': title,
                     'price': converted_price,
-                    'currency': product_currency,
+                    'currency': currency_id,  # Dynamically set based on API response
                     'platform': 'eBay',
                     'imageUrl': image_url,
                     'sourceLink': source_link,
                 })
+
+                # Debug log for each product
+                logger.debug(f"[eBay] Item ID: {item_id}, Title: {title}, Price: {price} {currency_id}")
+
             logger.debug(f"[eBay] Parsed Products: {products}")
             return products
         except ConnectionError as e:
@@ -98,6 +86,8 @@ class EbaySearcher:
         except Exception as e:
             logger.error(f"[eBay] Unexpected error: {e}")
             return []
+
+
 
 # --------------------------------------
 # Flipkart scraper

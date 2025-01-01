@@ -1,7 +1,9 @@
+// src/store/index.ts
+
 import { configureStore } from '@reduxjs/toolkit';
 import authReducer from './authSlice';
 import wishlistReducer from './wishlistSlice';
-import geolocationReducer from './GeolocationSlice';
+// import geolocationReducer from './GeolocationSlice'; // Removed
 import {
   persistStore,
   persistReducer,
@@ -29,23 +31,23 @@ const wishlistPersistConfig = {
 };
 
 // Configuration for persisting the geolocation slice
-const geolocationPersistConfig = {
-  key: 'geolocation',
-  storage: storage,
-  whitelist: ['countryCode', 'currency'],
-};
+// const geolocationPersistConfig = {
+//   key: 'geolocation',
+//   storage: storage,
+//   whitelist: ['countryCode', 'currency'],
+// };
 
 // Create persisted reducers
 const persistedAuthReducer = persistReducer(authPersistConfig, authReducer);
 const persistedWishlistReducer = persistReducer(wishlistPersistConfig, wishlistReducer);
-const persistedGeolocationReducer = persistReducer(geolocationPersistConfig, geolocationReducer);
+// const persistedGeolocationReducer = persistReducer(geolocationPersistConfig, geolocationReducer); // Removed
 
 // Configure the store with persisted reducers
 export const store = configureStore({
   reducer: {
     auth: persistedAuthReducer,
     wishlist: persistedWishlistReducer,
-    geolocation: persistedGeolocationReducer,
+    // geolocation: persistedGeolocationReducer, // Removed
     // Add other reducers here
   },
   middleware: (getDefaultMiddleware) =>
