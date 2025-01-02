@@ -1,3 +1,36 @@
+
+================================================================================
+File: .env
+Path: .env
+================================================================================
+
+MONGO_URI=mongodb://localhost:27017
+JWT_SECRET_KEY=eaa9220f59a1e9f18804f2143ed0c0558d2e10e3b394541caa66fbbf42bf1c7a
+BING_SUBSCRIPTION_KEY=665fa417c18c449c8e1e7f9485fc55cc
+GCS_API_KEY=AIzaSyAqJMNpG7sbJ1zV8fP2hXF3u4s1DrFfZic
+GCS_CX=b11921ac68a0843b4
+GOOGLE_APPLICATION_CREDENTIALS=C:\\Users\\ashuv\\Downloads\\service_account.json
+EBAY_APPID=Ashutosh-AIVisual-PRD-ffa6592a8-c89e0c50
+EBAY_DEVID=ebbe1d30-339c-4356-9945-e7223c3ded5d
+EBAY_CERTID=PRD-fa6592a8b7f8-6a94-43c9-a747-32c6
+EBAY_USERTOKEN="v^1.1#i^1#I^3#p^3#f^0#r^1#t^Ul4xMF8wOkM1Qjc2REMxQ0QyNjJGQjU5MjVCMzMwMUMzNUYwOERFXzBfMSNFXjI2MA=="
+EXCHANGERATE_API_KEY=912de5f4ec44063ee4321558
+IPAGEO_GEOLOCATION_API_KEY=9f0fed2306314272896094537ed07665
+
+
+================================================================================
+File: .gitignore
+Path: .gitignore
+================================================================================
+
+.env
+
+
+================================================================================
+File: app.py
+Path: app.py
+================================================================================
+
 # app.py
 
 import os
@@ -43,16 +76,12 @@ GCS_CX = os.getenv("GCS_CX")
 EBAY_APPID = os.getenv('EBAY_APPID')
 EBAY_DEVID = os.getenv('EBAY_DEVID')
 EBAY_CERTID = os.getenv('EBAY_CERTID')
-EBAY_USERTOKEN = os.getenv('EBAY_USERTOKEN')
-EXCHANGERATE_API_KEY = os.getenv('EXCHANGERATE_API_KEY')
-IPAGEO_GEOLOCATION_API_KEY = os.getenv('IPAGEO_GEOLOCATION_API_KEY')
-ALLOWED_ORIGINS = os.getenv("ALLOWED_ORIGINS", "*").split(',')
 
 ###############################################################################
 # LOGGING SETUP
 ###############################################################################
 logging.basicConfig(
-    level=logging.INFO,  # Set to INFO for production, DEBUG for development
+    level=logging.DEBUG,  # Set to DEBUG for detailed logs
     format='%(asctime)s [%(levelname)s] %(message)s',
     handlers=[
         logging.FileHandler("app.log"),
@@ -62,51 +91,29 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 ###############################################################################
-# FLASK APP CONFIGURATION
+# FLASK APP
 ###############################################################################
-
-class Config:
-    SECRET_KEY = JWT_SECRET_KEY
-    JWT_SECRET_KEY = JWT_SECRET_KEY
-    JWT_ACCESS_TOKEN_EXPIRES = timedelta(hours=1)  # Extended to 1 hour
-    JWT_REFRESH_TOKEN_EXPIRES = timedelta(days=30)  # Refresh tokens valid for 30 days
-    MONGO_URI = MONGO_URI
-    UPLOAD_FOLDER = "uploads"
-    MAX_CONTENT_LENGTH = 5 * 1024 * 1024  # 5 MB
-
-class DevelopmentConfig(Config):
-    DEBUG = True
-    CORS_ORIGINS = ["*"]  # Allow all origins in development
-
-class ProductionConfig(Config):
-    DEBUG = False
-    CORS_ORIGINS = ALLOWED_ORIGINS  # Restrict to specified origins in production
-
-# Determine environment
-ENV = os.getenv('FLASK_ENV', 'development')
-if ENV == 'production':
-    app_config = ProductionConfig
-else:
-    app_config = DevelopmentConfig
-
 app = Flask(__name__)
-app.config.from_object(app_config)
-
 api = Api(app)
 
-# Enable CORS
-CORS(app, resources={r"/*": {"origins": app_config.CORS_ORIGINS}})
+# Enable CORS on everything. Adjust origins in production for security:
+CORS(app, resources={r"/*": {"origins": "*"}})
 
 ###############################################################################
 # MONGO + JWT SETUP
 ###############################################################################
-client = MongoClient(app.config["MONGO_URI"])
+client = MongoClient(MONGO_URI)
 db = client["visual_search_engine"]
 
+app.config["JWT_SECRET_KEY"] = JWT_SECRET_KEY
+app.config["JWT_ACCESS_TOKEN_EXPIRES"] = timedelta(hours=1)  # Extended to 1 hour
+app.config["JWT_REFRESH_TOKEN_EXPIRES"] = timedelta(days=30)  # Refresh tokens valid for 30 days
 jwt = JWTManager(app)
 
-# Ensure upload folder exists
-os.makedirs(app.config["UPLOAD_FOLDER"], exist_ok=True)
+UPLOAD_FOLDER = "uploads"
+os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+app.config["UPLOAD_FOLDER"] = UPLOAD_FOLDER
+app.config["MAX_CONTENT_LENGTH"] = 5 * 1024 * 1024  # 5 MB
 
 ###############################################################################
 # REAL GOOGLE VISION DETECTION
@@ -379,10 +386,10 @@ async def fetch_google_custom_search(search_term: str, api_key: str, cx: str) ->
                             'id': unique_id,
                             'title': title,
                             'price': price,
-                            'currency': product_currency,  # Include currency
+                            'currency': product_currency,
                             'platform': 'Google Custom Search',
                             'imageUrl': image_url,
-                            'sourceLink': source_link,  # Ensure protocol
+                            'sourceLink': source_link,
                         })
                         logger.debug(f"[GCS] Added product: {unique_id}, Price: {price} {product_currency}")
 
@@ -398,7 +405,6 @@ async def fetch_google_custom_search(search_term: str, api_key: str, cx: str) ->
 ###############################################################################
 # AUTH RESOURCES
 ###############################################################################
-
 class Register(Resource):
     def post(self):
         data = request.get_json()
@@ -448,7 +454,7 @@ class Login(Resource):
 
 class RefreshTokenResource(Resource):
     @jwt_required(refresh=True)
-    def post(self):
+    async def post(self):
         current_user = get_jwt_identity()
         new_access_token = create_access_token(identity=current_user)
         logger.info(f"Access token refreshed for user: {current_user}")
@@ -457,10 +463,9 @@ class RefreshTokenResource(Resource):
 ###############################################################################
 # WISHLIST RESOURCE
 ###############################################################################
-
 class ProtectedWishlist(Resource):
     @jwt_required()
-    def get(self):
+    async def get(self):
         user_email = get_jwt_identity()
         try:
             wishlist = list(db["wishlist"].find(
@@ -483,7 +488,7 @@ class ProtectedWishlist(Resource):
             return {"error": "Failed to fetch wishlist"}, 500
 
     @jwt_required()
-    def post(self):
+    async def post(self):
         user_email = get_jwt_identity()
         data = request.get_json()
 
@@ -545,7 +550,7 @@ class ProtectedWishlist(Resource):
         }, 201
 
     @jwt_required()
-    def delete(self):
+    async def delete(self):
         user_email = get_jwt_identity()
         item_id = request.args.get('itemId')
         if not item_id:
@@ -565,10 +570,9 @@ class ProtectedWishlist(Resource):
 ###############################################################################
 # IMAGE ANALYSIS RESOURCE
 ###############################################################################
-
 class ImageAnalysis(Resource):
     @jwt_required()
-    def post(self):
+    async def post(self):
         try:
             if "image" not in request.files:
                 logger.error("No image file provided in the request")
@@ -578,10 +582,6 @@ class ImageAnalysis(Resource):
             if not image.filename or not image.filename.lower().endswith((".png", ".jpg", ".jpeg")):
                 logger.error(f"Invalid file type: {image.filename}")
                 return {"error": "Invalid file type"}, 400
-
-            if not allowed_file(image.filename):
-                logger.error(f"File not allowed: {image.filename}")
-                return {"error": "File type not allowed"}, 400
 
             filename = secure_filename(image.filename)
             file_path = os.path.join(app.config["UPLOAD_FOLDER"], filename)
@@ -617,9 +617,9 @@ class ImageAnalysis(Resource):
                     # Use only the first specific search term to ensure consistency
                     if search_queries:
                         primary_search_term = search_queries[0]
-                        google_results = asyncio.run(fetch_google_custom_search(
+                        google_results = await fetch_google_custom_search(
                             primary_search_term, GCS_API_KEY, GCS_CX
-                        ))
+                        )
                         if google_results:
                             logger.info(f"[GCS] Found {len(google_results)} results for '{primary_search_term}'.")
                             all_results.extend(google_results)
@@ -643,11 +643,13 @@ class ImageAnalysis(Resource):
                     if not ebay_search_term_cleaned:
                         ebay_search_term_cleaned = "Shoe"  # Fallback
 
-                    # Set default values since geolocation is removed
+                    # Fetch user's country code and currency from geolocation data
+                    # Since geolocation is being removed, set defaults or derive from other sources
+                    # For example, default to 'IN' and 'INR'
                     user_country_code = 'IN'  # India
                     user_currency = 'INR'
 
-                    ebay_results = asyncio.run(ebay_scraper.search_products(ebay_search_term_cleaned, user_country_code, user_currency, max_results=10))
+                    ebay_results = await ebay_scraper.search_products(ebay_search_term_cleaned, user_country_code, user_currency, max_results=10)
                     logger.info(f"[EBAY] Found {len(ebay_results)} results for '{ebay_search_term_cleaned}'.")
                     all_results.extend(ebay_results)
                 except Exception as ebay_exc:
@@ -732,7 +734,6 @@ class ImageAnalysis(Resource):
 ###############################################################################
 # WELCOME
 ###############################################################################
-
 class Welcome(Resource):
     def get(self):
         return {"message": "Welcome to the Visual Search Engine API"}
@@ -740,7 +741,6 @@ class Welcome(Resource):
 ###############################################################################
 # REGISTER ROUTES
 ###############################################################################
-
 api.add_resource(Register, "/register")
 api.add_resource(Login, "/login")
 api.add_resource(ProtectedWishlist, "/wishlist-protected")
@@ -749,17 +749,384 @@ api.add_resource(Welcome, "/")
 api.add_resource(RefreshTokenResource, "/refresh")  # Added Refresh Token Endpoint
 
 ###############################################################################
-# HELPER FUNCTIONS
-###############################################################################
-
-def allowed_file(filename):
-    ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg'}
-    return '.' in filename and \
-           filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
-
-###############################################################################
 # MAIN
 ###############################################################################
-
 if __name__ == "__main__":
-    app.run(host='0.0.0.0', port=5000, debug=app.config.get('DEBUG', False))
+    app.run(debug=True, port=5000)
+
+
+
+================================================================================
+File: scrapers.py
+Path: scrapers.py
+================================================================================
+
+import os
+import re
+import logging
+from typing import List, Dict
+from ebaysdk.finding import Connection as Finding
+from ebaysdk.exception import ConnectionError
+
+# --------------------------------------------------
+# scrapers.py
+# --------------------------------------------------
+logger = logging.getLogger(__name__)
+
+def clean_price(price_str):
+    cleaned_price = re.sub(r'[^\d.]', '', price_str)
+    try:
+        return float(cleaned_price)
+    except ValueError:
+        return 0.0
+
+class EbaySearcher:
+    def __init__(self):
+        self.app_id = os.getenv('EBAY_APPID')
+        self.devid = os.getenv('EBAY_DEVID')
+        self.certid = os.getenv('EBAY_CERTID')
+        if not all([self.app_id, self.devid, self.certid]):
+            logger.error("eBay API credentials are not fully set in environment variables.")
+            raise ValueError("eBay API credentials are required.")
+        self.api = Finding(appid=self.app_id, devid=self.devid, certid=self.certid, config_file=None)
+
+    async def search_products(self, search_term: str, country_code: str, currency: str, max_results: int = 10) -> List[Dict]:
+        try:
+            response = self.api.execute('findItemsAdvanced', {
+                'keywords': search_term,
+                'paginationInput': {
+                    'entriesPerPage': max_results,
+                    'pageNumber': 1
+                },
+                'outputSelector': ['SellerInfo', 'PictureURLSuperSize'],
+                'itemFilter': [
+                    {
+                        'name': 'LocatedIn',
+                        'value': country_code
+                    }
+                ]
+            })
+            items = response.dict().get('searchResult', {}).get('item', [])
+            products = []
+            for item in items:
+                title = item.get('title', '')
+                image_url = item.get('galleryURL', '')
+                source_link = item.get('viewItemURL', '')
+                price = float(item.get('sellingStatus', {}).get('currentPrice', {}).get('value', 0))
+                currency_id = item.get('sellingStatus', {}).get('currentPrice', {}).get('currencyId', 'USD')
+
+                # Validate URLs
+                if not image_url.startswith(('http://', 'https://')):
+                    logger.warning(f"Invalid imageUrl for eBay item: '{title}'. Skipping.")
+                    continue
+                if not source_link.startswith(('http://', 'https://')):
+                    logger.warning(f"Invalid sourceLink for eBay item: '{title}'. Skipping.")
+                    continue
+
+                # Assign a unique ID by prefixing with 'ebay_'
+                item_id = item.get('itemId', '')
+                unique_id = f"ebay_{item_id}"
+                converted_price = price  # Assuming no conversion needed; handled in frontend if necessary
+
+                products.append({
+                    'id': unique_id,
+                    'title': title,
+                    'price': converted_price,
+                    'currency': currency_id,  # Dynamically set based on API response
+                    'platform': 'eBay',
+                    'imageUrl': image_url,
+                    'sourceLink': source_link,
+                })
+
+                # Debug log for each product
+                logger.debug(f"[eBay] Item ID: {item_id}, Title: {title}, Price: {price} {currency_id}")
+
+            logger.debug(f"[eBay] Parsed Products: {products}")
+            return products
+        except ConnectionError as e:
+            logger.error(f"[eBay] ConnectionError: {e}")
+            return []
+        except Exception as e:
+            logger.error(f"[eBay] Unexpected error: {e}")
+            return []
+
+
+# --------------------------------------
+# Not working scrapers- need adjustments
+# --------------------------------------
+
+
+
+# --------------------------------------
+# Flipkart scraper
+# --------------------------------------
+
+# def scrape_flipkart(search_term, max_retries=3):
+#     base_url = "https://www.flipkart.com/search"
+#     headers = {
+#         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 \
+#             (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36"
+#     }
+#     results = []
+#     for attempt in range(max_retries):
+#         try:
+#             params = {
+#                 "q": search_term,
+#                 "otracker": "search",
+#                 "marketplace": "FLIPKART"
+#             }
+#             print(f"[Flipkart] Attempt {attempt+1} - Searching: {search_term}")
+#             response = requests.get(base_url, params=params, headers=headers, timeout=15)
+#             print(f"[Flipkart] Response Code: {response.status_code}")
+#             response.raise_for_status()
+#             soup = BeautifulSoup(response.content, 'html.parser')
+
+#             # Product containers
+#             containers = (
+#                 soup.select("div._1AtVbE div._13oc-S")
+#                 or soup.select("div._4ddWXP")
+#                 or soup.select("div._2kHMtA")
+#             )
+#             print(f"[Flipkart] Found {len(containers)} containers")
+
+#             for container in containers[:10]:
+#                 try:
+#                     title_elem = (
+#                         container.select_one("div._4rR01T") or
+#                         container.select_one("a.s1Q9rs") or
+#                         container.select_one("div._3wU53n")
+#                     )
+#                     price_elem = container.select_one("div._30jeq3")
+#                     link_elem = (
+#                         container.select_one("a._1fQZEK") or
+#                         container.select_one("a.s1Q9rs")
+#                     )
+#                     image_elem = container.select_one("img._396cs4")
+
+#                     if title_elem and price_elem and link_elem:
+#                         results.append({
+#                             "title": title_elem.text.strip(),
+#                             "price": clean_price(price_elem.text),
+#                             "link": urljoin("https://www.flipkart.com", link_elem['href']),
+#                             "image_url": image_elem['src'] if image_elem else None,
+#                             "source": "Flipkart"
+#                         })
+#                 except:
+#                     continue
+
+#             if results:
+#                 break
+#         except Exception as e:
+#             print(f"[Flipkart] Attempt {attempt+1} - Error: {str(e)}")
+#             if attempt < max_retries - 1:
+#                 time.sleep(random.uniform(1, 3))
+
+#     return results
+
+# --------------------------------------
+# Myntra scraper
+# --------------------------------------
+
+
+# def scrape_myntra(search_term, max_retries=3):
+#     """Improved Myntra scraper using web scraping."""
+#     base_url = "https://www.myntra.com"
+#     search_url = f"{base_url}/{quote(search_term)}"
+
+#     headers = {
+#         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36",
+#         "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8",
+#         "Accept-Language": "en-US,en;q=0.5",
+#         "Accept-Encoding": "gzip, deflate, br",
+#         "Connection": "keep-alive",
+#         "Upgrade-Insecure-Requests": "1",
+#         "TE": "Trailers"
+#     }
+
+#     results = []
+#     for attempt in range(max_retries):
+#         try:
+#             print(f"[Myntra] Attempt {attempt+1}: Fetching URL -> {search_url}")
+#             response = requests.get(search_url, headers=headers, timeout=10)
+#             print(f"[Myntra] Response Code: {response.status_code}")
+
+#             response.raise_for_status()
+#             soup = BeautifulSoup(response.content, 'html.parser')
+
+#             # Find product listings
+#             products = soup.find_all('li', class_='product-base')
+#             print(f"[Myntra] Found {len(products)} products in HTML")
+
+#             for product in products[:10]:
+#                 try:
+#                     anchor = product.find('a', class_='product-link')
+#                     if not anchor:
+#                         continue
+
+#                     link = base_url + anchor['href']
+
+#                     # Extract product details
+#                     brand = product.find('h3', class_='product-brand')
+#                     name = product.find('h4', class_='product-product')
+#                     price = product.find('span', class_='product-discountedPrice')
+
+#                     if not (brand and price):
+#                         continue
+
+#                     image = product.find('img')
+
+#                     result = {
+#                         "title": f"{brand.text} {name.text if name else ''}".strip(),
+#                         "price": clean_price(price.text),
+#                         "link": link,
+#                         "image_url": image['src'] if image else None,
+#                         "source": "Myntra"
+#                     }
+#                     results.append(result)
+#                 except Exception as e:
+#                     print(f"[Myntra] Error processing product: {str(e)}")
+#                     continue
+
+#             if results:
+#                 print(f"[Myntra] Returning {len(results)} results.")
+#                 break
+
+#         except Exception as e:
+#             print(f"[Myntra] Scraping attempt {attempt+1} failed: {str(e)}")
+#             if attempt < max_retries - 1:
+#                 time.sleep(random.uniform(1, 3))
+
+#     return results
+
+
+# --------------------------------------
+# Amazon scraper
+# --------------------------------------
+
+
+# def scrape_amazon(search_term, max_retries=3):
+#     """Amazon scraper with debug logs."""
+#     base_url = "https://www.amazon.in/s"
+#     headers = {
+#         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36",
+#         "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8",
+#         "Accept-Language": "en-US,en;q=0.5"
+#     }
+
+#     results = []
+#     for attempt in range(max_retries):
+#         try:
+#             params = {
+#                 "k": search_term,
+#                 "ref": "nb_sb_noss_2"
+#             }
+#             print(f"[Amazon] Attempt {attempt+1}: Searching for '{search_term}'")
+#             response = requests.get(base_url, params=params, headers=headers, timeout=15)
+#             print(f"[Amazon] Response Code: {response.status_code}")
+
+#             response.raise_for_status()
+#             soup = BeautifulSoup(response.content, 'html.parser')
+
+#             products = soup.select('div.s-result-item[data-component-type="s-search-result"]')
+#             print(f"[Amazon] Found {len(products)} products in HTML")
+
+#             for product in products[:10]:
+#                 try:
+#                     title_elem = product.select_one('span.a-text-normal')
+#                     price_elem = product.select_one('span.a-price-whole')
+#                     link_elem = product.select_one('a.a-link-normal')
+#                     image_elem = product.select_one('img.s-image')
+
+#                     if title_elem and price_elem and link_elem:
+#                         result = {
+#                             "title": title_elem.text.strip(),
+#                             "price": clean_price(price_elem.text),
+#                             "link": urljoin("https://www.amazon.in", link_elem['href']),
+#                             "image_url": image_elem['src'] if image_elem else None,
+#                             "source": "Amazon"
+#                         }
+#                         results.append(result)
+
+#                 except Exception as e:
+#                     print(f"[Amazon] Error processing product: {str(e)}")
+#                     continue
+
+#             if results:
+#                 print(f"[Amazon] Returning {len(results)} results.")
+#                 break
+
+#         except Exception as e:
+#             print(f"[Amazon] Attempt {attempt+1} failed: {str(e)}")
+#             if attempt < max_retries - 1:
+#                 time.sleep(random.uniform(1, 3))
+
+#     return results
+
+
+
+================================================================================
+File: utils.py
+Path: utils.py
+================================================================================
+
+# utils.py
+
+import re
+import os
+import aiohttp
+import logging
+
+def clean_search_term(term):
+    """
+    Clean the term by removing punctuation, limiting to first 2 words,
+    and skipping generic words like 'object', 'item', etc.
+    """
+    # Define some generic words to drop
+    generic_terms = {'object', 'product', 'item', 'thing'}
+
+    # Remove non-alphanumeric except space
+    term = re.sub(r'[^\w\s]', '', term.lower())
+
+    # Split into words
+    words = term.split()
+
+    # Remove generic words
+    words = [w for w in words if w not in generic_terms]
+
+    # Keep only first 2 words and ensure they are specific
+    cleaned = " ".join(words[:2]) if words else ""
+    
+    # Additional check to remove overly generic terms
+    if cleaned in {'shoe', 'sneaker', 'trainer', 'phone'}:
+        return ""
+    
+    return cleaned
+
+def extract_brand_model(vision_labels, web_entities):
+    """
+    Extract brand and model information from Vision API results.
+    Example use if you want to identify brand in the future.
+    """
+    common_brands = ['nike', 'adidas', 'puma', 'reebok', 'samsung', 'apple', 'sony']
+    
+    # Look for brand names in both labels and web entities
+    brands = []
+    for term in vision_labels + web_entities:
+        term_lower = term.lower()
+        if any(brand in term_lower for brand in common_brands):
+            brands.append(term)
+    
+    return brands[0] if brands else None
+
+def clean_price(price_str):
+    """Clean price strings to remove currency symbols and convert to standard format."""
+    cleaned_price = re.sub(r'[^\d.]', '', price_str)
+    try:
+        return float(cleaned_price)
+    except ValueError:
+        return 0.0
+
+logger = logging.getLogger(__name__)
+
+
+

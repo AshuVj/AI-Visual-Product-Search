@@ -1,0 +1,12 @@
+Flask
+flask-restful
+flask-jwt-extended
+flask-cors
+pymongo
+bcrypt
+gunicorn
+aiohttp
+python-dotenv
+google-cloud-vision
+ebaysdk
+# ... any other dependencies

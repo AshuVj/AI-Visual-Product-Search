@@ -1,0 +1,2022 @@
+
+================================================================================
+File: .env
+Path: .env
+================================================================================
+
+VITE_API_URL=http://127.0.0.1:5000
+
+
+================================================================================
+File: .gitignore
+Path: .gitignore
+================================================================================
+
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+node_modules
+dist
+dist-ssr
+*.local
+
+# Editor directories and files
+.vscode/*
+!.vscode/extensions.json
+.idea
+.DS_Store
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+
+
+================================================================================
+File: eslint.config.js
+Path: eslint.config.js
+================================================================================
+
+import js from '@eslint/js';
+import globals from 'globals';
+import reactHooks from 'eslint-plugin-react-hooks';
+import reactRefresh from 'eslint-plugin-react-refresh';
+import tseslint from 'typescript-eslint';
+
+export default tseslint.config(
+  { ignores: ['dist'] },
+  {
+    extends: [js.configs.recommended, ...tseslint.configs.recommended],
+    files: ['**/*.{ts,tsx}'],
+    languageOptions: {
+      ecmaVersion: 2020,
+      globals: globals.browser,
+    },
+    plugins: {
+      'react-hooks': reactHooks,
+      'react-refresh': reactRefresh,
+    },
+    rules: {
+      ...reactHooks.configs.recommended.rules,
+      'react-refresh/only-export-components': [
+        'warn',
+        { allowConstantExport: true },
+      ],
+    },
+  }
+);
+
+
+
+================================================================================
+File: index.html
+Path: index.html
+================================================================================
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Vite + React + TS</title>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>
+
+
+
+================================================================================
+File: package.json
+Path: package.json
+================================================================================
+
+{
+  "name": "visual-search-wishlist",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "lint": "eslint .",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "@reduxjs/toolkit": "^2.2.1",
+    "axios": "^1.6.7",
+    "lucide-react": "^0.344.0",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "react-dropzone": "^14.2.3",
+    "react-redux": "^9.1.0",
+    "react-router-dom": "^6.22.2",
+    "react-toastify": "^11.0.2",
+    "redux-persist": "^6.0.0"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.9.1",
+    "@types/react": "^18.3.5",
+    "@types/react-dom": "^18.3.0",
+    "@types/react-toastify": "^4.0.2",
+    "@vitejs/plugin-react": "^4.3.1",
+    "autoprefixer": "^10.4.18",
+    "eslint": "^9.9.1",
+    "eslint-plugin-react-hooks": "^5.1.0-rc.0",
+    "eslint-plugin-react-refresh": "^0.4.11",
+    "globals": "^15.9.0",
+    "postcss": "^8.4.35",
+    "tailwindcss": "^3.4.1",
+    "typescript": "^5.5.3",
+    "typescript-eslint": "^8.3.0",
+    "vite": "^5.4.2"
+  }
+}
+
+
+
+================================================================================
+File: postcss.config.js
+Path: postcss.config.js
+================================================================================
+
+export default {
+  plugins: {
+    tailwindcss: {},
+    autoprefixer: {},
+  },
+};
+
+
+
+================================================================================
+File: tailwind.config.js
+Path: tailwind.config.js
+================================================================================
+
+// tailwind.config.js
+module.exports = {
+  content: ['./index.html', './src/**/*.{js,ts,jsx,tsx}'],
+  theme: {
+    extend: {
+      screens: {
+        xs: '300px', // Minimum breakpoint for extra-small screens
+      },
+    },
+  },
+  plugins: [],
+};
+
+
+
+================================================================================
+File: tsconfig.app.json
+Path: tsconfig.app.json
+================================================================================
+
+{
+  "compilerOptions": {
+    "target": "ES2020",
+    "useDefineForClassFields": true,
+    "lib": ["ES2020", "DOM", "DOM.Iterable"],
+    "module": "ESNext",
+    "skipLibCheck": true,
+
+    /* Bundler mode */
+    "moduleResolution": "bundler",
+    "allowImportingTsExtensions": true,
+    "isolatedModules": true,
+    "moduleDetection": "force",
+    "noEmit": true,
+    "jsx": "react-jsx",
+
+    /* Linting and Strictness */
+    "strict": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "noFallthroughCasesInSwitch": true,
+    "strictNullChecks": true,                  // Ensure variables can't be null unless explicitly defined
+    "strictFunctionTypes": true,
+    "strictBindCallApply": true,
+    "strictPropertyInitialization": true,
+    "noImplicitAny": true,
+    "noImplicitThis": true,
+    "alwaysStrict": true,
+
+    /* Additional Options */
+    "esModuleInterop": true,
+    "forceConsistentCasingInFileNames": true
+  },
+  "include": ["src"]
+}
+
+
+
+================================================================================
+File: tsconfig.json
+Path: tsconfig.json
+================================================================================
+
+{
+  "files": [],
+  "references": [
+    { "path": "./tsconfig.app.json" },
+    { "path": "./tsconfig.node.json" }
+  ]
+}
+
+
+
+================================================================================
+File: tsconfig.node.json
+Path: tsconfig.node.json
+================================================================================
+
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "lib": ["ES2023"],
+    "module": "ESNext",
+    "skipLibCheck": true,
+
+    /* Bundler mode */
+    "moduleResolution": "bundler",
+    "allowImportingTsExtensions": true,
+    "isolatedModules": true,
+    "moduleDetection": "force",
+    "noEmit": true,
+
+    /* Linting */
+    "strict": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "noFallthroughCasesInSwitch": true
+  },
+  "include": ["vite.config.ts"]
+}
+
+
+
+================================================================================
+File: vite.config.ts
+Path: vite.config.ts
+================================================================================
+
+import { defineConfig } from 'vite';
+import react from '@vitejs/plugin-react';
+
+// https://vitejs.dev/config/
+export default defineConfig({
+  plugins: [react()],
+  optimizeDeps: {
+    exclude: ['lucide-react'],
+  },
+});
+
+
+
+================================================================================
+File: App.tsx
+Path: src\App.tsx
+================================================================================
+
+// src/App.tsx
+
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { Provider } from 'react-redux';
+import { store } from './store';
+import { SearchProvider } from './context/SearchContext';
+// import { setGeolocation } from './store/GeolocationSlice'; // Removed
+
+import Header from './components/Header';
+import ProductList from './components/ProductList';
+import Landing from './pages/Landing';
+import Upload from './pages/Upload';
+import Login from './pages/Login';
+import Signup from './pages/Signup';
+import Wishlist from './pages/Wishlist';
+import ProtectedRoute from './components/ProtectedRoute';
+import { ToastContainer } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
+
+function AppContent() {
+  // Removed geolocation hook and dispatch
+  // const { countryCode, currency } = useGeolocation();
+
+  // useEffect(() => {
+  //   if (countryCode && currency) {
+  //     dispatch(setGeolocation({ countryCode, currency }));
+  //   }
+  // }, [countryCode, currency, dispatch]);
+
+  return (
+    <div className="min-h-screen bg-gray-50">
+      <Header />
+      <main>
+        <Routes>
+          <Route path="/" element={<Landing />} />
+          <Route
+            path="/upload"
+            element={
+              <ProtectedRoute>
+                <Upload />
+              </ProtectedRoute>
+            }
+          />
+          <Route path="/login" element={<Login />} />
+          <Route path="/signup" element={<Signup />} />
+          <Route
+            path="/wishlist"
+            element={
+              <ProtectedRoute>
+                <Wishlist />
+              </ProtectedRoute>
+            }
+          />
+          {/* Example route for product list */}
+          <Route path="/products" element={<ProductList />} />
+        </Routes>
+      </main>
+      <ToastContainer />
+    </div>
+  );
+}
+
+function App() {
+  return (
+    <Provider store={store}>
+      <SearchProvider>
+        <Router>
+          <AppContent />
+        </Router>
+      </SearchProvider>
+    </Provider>
+  );
+}
+
+export default App;
+
+
+
+================================================================================
+File: index.css
+Path: src\index.css
+================================================================================
+
+@import "tailwindcss/base";
+@import "tailwindcss/components";
+@import "tailwindcss/utilities";
+
+body {
+    overflow-x: hidden;
+  }
+  
+/* Global button hover animations */
+button:hover {
+    transform: scale(1.1);
+    transition: transform 0.3s ease, background-color 0.3s ease;
+    background-color: #2563eb; /* Tailwind Blue-600 equivalent */
+}
+
+/* index.css */
+.result-card {
+    transition: transform 0.2s, box-shadow 0.2s;
+  }
+  
+  .result-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+  }
+  
+  .error-display button {
+    transition: background-color 0.2s ease;
+  }
+  /* For the Product Card styling */
+.product-card {
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+  }
+  
+  .product-card:hover {
+    transform: translateY(-8px);
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+  }
+  
+  .product-card img {
+    border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+  }
+  
+  .product-card .p-4 {
+    padding: 16px;
+    text-align: center;
+  }
+/* Error Display Styles */
+.error-display {
+    background-color: #fef2f2; /* Red-50 */
+    border: 1px solid #fecaca; /* Red-200 */
+    color: #b91c1c; /* Red-700 */
+    padding: 16px;
+    border-radius: 8px;
+    text-align: center;
+    position: relative;
+  }
+  
+  .error-display .illustration {
+    width: 100px;
+    margin: 0 auto 1rem;
+  }
+  
+  .error-display .retry-button {
+    margin-top: 1rem;
+    padding: 8px 16px;
+    background-color: #ef4444; /* Red-500 */
+    color: #fff;
+    border-radius: 4px;
+    font-size: 0.875rem;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+  }
+  
+  .error-display .retry-button:hover {
+    background-color: #dc2626; /* Red-600 */
+  }
+/* Enhanced Spinner Animation */
+.loader-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 200px;
+  }
+  
+  .loader {
+    width: 40px;
+    height: 40px;
+    border: 4px solid #e5e7eb; /* Gray-200 */
+    border-top-color: #6366f1; /* Indigo-500 */
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+  }
+  
+  @keyframes spin {
+    to {
+      transform: rotate(360deg);
+    }
+  }
+  
+  .loader-message {
+    margin-top: 1rem;
+    font-size: 1rem;
+    color: #4b5563; /* Gray-600 */
+  }
+      
+
+
+================================================================================
+File: main.tsx
+Path: src\main.tsx
+================================================================================
+
+import './index.css';
+import React from 'react';
+import ReactDOM from 'react-dom/client'; // Import from 'react-dom/client'
+import App from './App';
+import { store, persistor } from './store';
+import { Provider } from 'react-redux';
+import { PersistGate } from 'redux-persist/integration/react';
+import { ToastContainer } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
+
+// Select the root element
+const container = document.getElementById('root');
+
+if (!container) {
+  throw new Error("Failed to find the root element. Make sure there's an element with id 'root' in your HTML.");
+}
+
+// Create a root.
+const root = ReactDOM.createRoot(container);
+
+// Render the application
+root.render(
+  <React.StrictMode>
+    <Provider store={store}>
+      {/* PersistGate delays the rendering until persisted state is loaded */}
+      <PersistGate loading={<div>Loading...</div>} persistor={persistor}>
+        <App />
+        <ToastContainer />
+      </PersistGate>
+    </Provider>
+  </React.StrictMode>
+);
+
+
+
+================================================================================
+File: vite-env.d.ts
+Path: src\vite-env.d.ts
+================================================================================
+
+/// <reference types="vite/client" />
+
+
+================================================================================
+File: AuthForm.tsx
+Path: src\components\AuthForm.tsx
+================================================================================
+
+import React, { useState } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
+import { useDispatch } from 'react-redux';
+import { setCredentials } from '../store/authSlice';
+import { login, signup } from '../utils/api';
+import { saveAuthData } from '../utils/storage';
+
+interface AuthFormProps {
+  type: 'login' | 'signup';
+}
+
+interface LocationState {
+  from?: string;
+}
+
+export default function AuthForm({ type }: AuthFormProps) {
+  const [formData, setFormData] = useState({
+    username: '',
+    email: '',
+    password: '',
+  });
+  const [error, setError] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+  const dispatch = useDispatch();
+  const navigate = useNavigate();
+  const location = useLocation();
+  const { from } = (location.state as LocationState) || { from: '/' } as LocationState;
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError('');
+    setIsLoading(true);
+  
+    try {
+      let data;
+      // If type === 'login', call "login(...)"
+      if (type === 'login') {
+        data = await login(formData.email, formData.password);
+      } else {
+        // If type === 'signup', call "signup(...)"
+        data = await signup(formData.username, formData.email, formData.password);
+      }
+  
+      // Suppose your backend returns { access_token, user: {...} }
+      // or something similar
+      const { access_token, user } = data; 
+      // Or if your backend calls it "access_token"
+      // Adjust to your actual JSON shape
+  
+      // Save to localStorage
+      saveAuthData(access_token, user);
+  
+      // Update Redux store
+      dispatch(setCredentials({ user, token: access_token }));
+  
+      // navigate back
+      navigate(from || '/');
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Authentication failed.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+  
+
+  return (
+    <form onSubmit={handleSubmit} className="space-y-4 w-full max-w-md">
+      {type === 'signup' && (
+        <div>
+          <label htmlFor="username" className="block text-sm font-medium text-gray-700">
+            Username
+          </label>
+          <input
+            type="text"
+            id="username"
+            value={formData.username}
+            onChange={(e) => setFormData({ ...formData, username: e.target.value })}
+            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+            required
+          />
+        </div>
+      )}
+      <div>
+        <label htmlFor="email" className="block text-sm font-medium text-gray-700">
+          Email
+        </label>
+        <input
+          type="email"
+          id="email"
+          value={formData.email}
+          onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+          className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+          required
+        />
+      </div>
+      <div>
+        <label htmlFor="password" className="block text-sm font-medium text-gray-700">
+          Password
+        </label>
+        <input
+          type="password"
+          id="password"
+          value={formData.password}
+          onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+          className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+          required
+        />
+      </div>
+      {error && (
+        <p className="text-red-500 text-sm">{error}</p>
+      )}
+      <button
+        type="submit"
+        disabled={isLoading}
+        className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50"
+      >
+        {isLoading ? 'Please wait...' : (type === 'login' ? 'Sign In' : 'Sign Up')}
+      </button>
+    </form>
+  );
+}
+
+
+================================================================================
+File: ErrorDisplay.tsx
+Path: src\components\ErrorDisplay.tsx
+================================================================================
+
+// components/ErrorDisplay.tsx
+export default function ErrorDisplay({ error, onRetry }: { error: string; onRetry?: () => void }) {
+    return (
+      <div className="text-center py-8 px-4 bg-red-50 rounded-lg">
+        <p className="text-red-600 text-lg font-medium">{error}</p>
+        {onRetry && (
+          <button
+            onClick={onRetry}
+            className="mt-4 px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700"
+          >
+            Try Again
+          </button>
+        )}
+      </div>
+    );
+  }
+  
+
+
+================================================================================
+File: Header.tsx
+Path: src\components\Header.tsx
+================================================================================
+
+// src/components/Header.tsx
+
+import { Link, useNavigate } from 'react-router-dom';
+import { useDispatch, useSelector } from 'react-redux';
+import { Search, Heart, LogOut } from 'lucide-react';
+import { logout } from '../store/authSlice';
+import { clearWishlist } from '../store/wishlistSlice';
+import type { RootState } from '../store';
+
+export default function Header() {
+  const dispatch = useDispatch();
+  const navigate = useNavigate();
+  const { isAuthenticated } = useSelector((state: RootState) => state.auth);
+  const { items } = useSelector((state: RootState) => state.wishlist);
+
+  const handleLogout = () => {
+    dispatch(logout());
+    dispatch(clearWishlist());
+    navigate('/');
+  };
+
+  return (
+    <header className="bg-white shadow-sm">
+      <nav className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+        <Link to="/" className="flex items-center space-x-2">
+          <Search className="w-6 h-6 text-indigo-600" />
+          <span className="font-bold text-xl truncate max-w-[200px] sm:max-w-full">
+            Visual Search
+          </span>
+        </Link>
+
+        <div className="flex items-center space-x-4">
+          <Link
+            to="/upload"
+            className="text-gray-600 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium"
+          >
+            Search
+          </Link>
+
+          {isAuthenticated ? (
+            <>
+              <Link
+                to="/wishlist"
+                className="relative text-gray-600 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium"
+              >
+                <Heart className="w-5 h-5" />
+                {items.length > 0 && (
+                  <span className="absolute -top-1 -right-1 bg-indigo-600 text-white text-xs w-4 h-4 rounded-full flex items-center justify-center">
+                    {items.length}
+                  </span>
+                )}
+              </Link>
+              <button
+                onClick={handleLogout}
+                className="text-gray-600 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium"
+              >
+                <LogOut className="w-5 h-5" />
+              </button>
+            </>
+          ) : (
+            <Link
+              to="/login"
+              className="bg-indigo-600 text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-indigo-700"
+            >
+              Login
+            </Link>
+          )}
+        </div>
+      </nav>
+    </header>
+  );
+}
+
+
+
+================================================================================
+File: ImageDropzone.tsx
+Path: src\components\ImageDropzone.tsx
+================================================================================
+
+import { useCallback } from 'react';
+import { useDropzone } from 'react-dropzone';
+import { Upload } from 'lucide-react';
+
+interface ImageDropzoneProps {
+  onImageUpload: (file: File) => void;
+}
+
+export default function ImageDropzone({ onImageUpload }: ImageDropzoneProps) {
+  const onDrop = useCallback((acceptedFiles: File[]) => {
+    if (acceptedFiles[0]) {
+      onImageUpload(acceptedFiles[0]);
+    }
+  }, [onImageUpload]);
+
+  const { getRootProps, getInputProps, isDragActive } = useDropzone({
+    onDrop,
+    accept: {
+      'image/*': ['.jpeg', '.jpg', '.png']
+    },
+    maxSize: 5242880, // 5MB
+    multiple: false
+  });
+
+  return (
+    <div
+      {...getRootProps()}
+      className={`border-2 border-dashed rounded-lg p-8 text-center cursor-pointer transition-colors
+        ${isDragActive ? 'border-indigo-500 bg-indigo-50' : 'border-gray-300 hover:border-indigo-400'}`}
+    >
+      <input {...getInputProps()} />
+      <Upload className="w-12 h-12 mx-auto mb-4 text-gray-400" />
+      <p className="text-lg text-gray-600">
+        {isDragActive ? (
+          'Drop your image here'
+        ) : (
+          'Drag & drop an image here, or click to select'
+        )}
+      </p>
+      <p className="text-sm text-gray-500 mt-2">
+        Supports PNG, JPG or JPEG (max. 5MB)
+      </p>
+    </div>
+  );
+}
+
+
+================================================================================
+File: Loader.tsx
+Path: src\components\Loader.tsx
+================================================================================
+
+export default function Loader({ message }: { message?: string }) {
+    return (
+      <div className="loader-container">
+        <div className="loader"></div>
+        <p className="loader-message">{message || 'Loading...'}</p>
+      </div>
+    );
+  }
+
+
+
+================================================================================
+File: ProductCard.tsx
+Path: src\components\ProductCard.tsx
+================================================================================
+
+import { Heart, Trash2 } from 'lucide-react';
+import { useDispatch, useSelector } from 'react-redux';
+import {
+  addToWishlist as addToWishlistAction,
+  removeFromWishlist as removeFromWishlistAction,
+} from '../store/wishlistSlice';
+import {
+  addToWishlist as addToWishlistApi,
+  removeFromWishlist as removeFromWishlistApi,
+} from '../utils/api';
+import { useAuth } from '../hooks/useAuth';
+import type { Product } from '../types';
+import type { RootState } from '../store';
+import { toast } from 'react-toastify';
+import { useState } from 'react';
+
+interface ProductCardProps {
+  product: Product;
+  isWishlist?: boolean;
+  onRemove?: (productId: string) => Promise<void>; // Make it return Promise for proper handling
+}
+
+export default function ProductCard({
+  product,
+  isWishlist = false,
+  onRemove,
+}: ProductCardProps) {
+  const dispatch = useDispatch();
+  const { requireAuth } = useAuth();
+  const wishlistItems = useSelector((state: RootState) => state.wishlist.items);
+  const isInWishlist = wishlistItems.some((item) => item.id === product.id);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState('');
+
+  const handleWishlistAction = () => {
+    requireAuth(async () => {
+      if (isWishlist && onRemove) {
+        // Delegate removal to the parent component
+        setIsLoading(true);
+        setError('');
+        try {
+          await onRemove(product.id);
+          // Assuming onRemove handles dispatch and toasts
+        } catch (error) {
+          console.error('Failed to remove from wishlist:', error);
+          toast.error('Failed to remove item from wishlist');
+        } finally {
+          setIsLoading(false);
+        }
+        return;
+      }
+
+      // Handle add/remove from wishlist
+      setError('');
+      setIsLoading(true);
+
+      try {
+        if (isInWishlist) {
+          await removeFromWishlistApi(product.id);
+          dispatch(removeFromWishlistAction(product.id));
+          toast.success('Item removed from wishlist');
+        } else {
+          await addToWishlistApi(product);
+          dispatch(addToWishlistAction(product));
+          toast.success('Item added to wishlist');
+        }
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Failed to update wishlist.');
+        toast.error(err instanceof Error ? err.message : 'Failed to update wishlist.');
+      } finally {
+        setIsLoading(false);
+      }
+    });
+  };
+
+  // Define a mapping from currency codes to symbols
+  const currencySymbols: { [key: string]: string } = {
+    'USD': '$',
+    'INR': '₹',
+    'EUR': '€',
+    'GBP': '£',
+    'CAD': 'C$',
+    'AUD': 'A$',
+    // Add more as needed
+  };
+
+  // Format the price based on currency
+  const formatPrice = () => {
+    if (product.price && product.price > 0 && product.currency) {
+      const currencySymbol = currencySymbols[product.currency] || '$'; // Default to '$' if currency not mapped
+      return `${currencySymbol}${product.price.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+    }
+    return 'Price not available';
+  };
+
+  // Ensure sourceLink has protocol
+  const getSourceLink = () => {
+    if (product.sourceLink.startsWith('http://') || product.sourceLink.startsWith('https://')) {
+      return product.sourceLink;
+    }
+    return `https://${product.sourceLink}`;
+  };
+
+  return (
+    <div className="product-card bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transform hover:scale-105 transition-transform">
+      <img
+        src={product.imageUrl} // Ensure consistent naming between frontend and backend
+        alt={product.title}
+        className="w-full h-40 object-cover"
+        loading="lazy" // Improves performance by lazy loading images
+      />
+      <div className="p-4">
+        <h3 className="text-base font-semibold text-gray-900 mb-2 truncate">
+          {product.title}
+        </h3>
+        <div className="flex justify-between items-center">
+          <div className="text-sm">
+            <a
+              href={getSourceLink()} // Updated to ensure full URL
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-blue-500 hover:underline mb-1 block"
+            >
+              Link {/* Changed from platform name to 'Link' */}
+            </a>
+            <p className="text-indigo-600 font-bold">
+              {formatPrice()}
+            </p>
+          </div>
+          <button
+            onClick={handleWishlistAction}
+            disabled={isLoading}
+            className={`p-2 rounded-full ${
+              isWishlist || isInWishlist
+                ? 'bg-red-100 text-red-600 hover:bg-red-200'
+                : 'bg-indigo-100 text-indigo-600 hover:bg-indigo-200'
+            } ${isLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
+            aria-label={isWishlist || isInWishlist ? 'Remove from wishlist' : 'Add to wishlist'}
+          >
+            {isWishlist || isInWishlist ? (
+              <Trash2 className="w-5 h-5" />
+            ) : (
+              <Heart className="w-5 h-5" />
+            )}
+          </button>
+        </div>
+        {error && <p className="text-red-500 text-xs mt-1">{error}</p>}
+      </div>
+    </div>
+  );
+}
+
+
+
+================================================================================
+File: ProductList.tsx
+Path: src\components\ProductList.tsx
+================================================================================
+
+// src/components/ProductList.tsx
+
+import React, { useState } from 'react';
+import axios from 'axios';
+import ProductCard from './ProductCard';
+import type { Product } from '../types'; // Import the Product interface
+
+const ProductList: React.FC = () => {
+  // Removed geolocation selectors
+  // const { countryCode, currency } = useSelector((state: RootState) => state.geolocation);
+  
+  // Optionally, set default values if needed
+  const defaultCountryCode = 'US';
+  const defaultCurrency = 'USD';
+  
+  const [products, setProducts] = useState<Product[]>([]);
+  const [loading, setLoading] = useState<boolean>(false);
+  const [error, setError] = useState<string | null>(null);
+  const [searchTerm, setSearchTerm] = useState<string>('');
+  const [selectedImage, setSelectedImage] = useState<File | null>(null); // For image-based search
+
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      setSelectedImage(e.target.files[0]);
+    }
+  };
+
+  const handleSearch = async () => {
+    if (!searchTerm && !selectedImage) {
+      setError('Please enter a search term or upload an image.');
+      return;
+    }
+
+    setLoading(true);
+    setError(null);
+
+    try {
+      let response;
+
+      if (selectedImage) {
+        // Image-based search
+        const formData = new FormData();
+        formData.append('image', selectedImage);
+
+        response = await axios.post('/analyze-image', formData, {
+          headers: {
+            'Content-Type': 'multipart/form-data',
+          },
+          // Removed geolocation params
+          // params: {
+          //   countryCode,
+          //   currency,
+          // },
+          params: {
+            // If backend still expects countryCode and currency, provide default values
+            countryCode: defaultCountryCode,
+            currency: defaultCurrency,
+          },
+        });
+      } else {
+        // Text-based search
+        response = await axios.post('/search', { 
+          query: searchTerm 
+        }, {
+          // Removed geolocation params
+          // params: {
+          //   countryCode,
+          //   currency,
+          // },
+          params: {
+            countryCode: defaultCountryCode,
+            currency: defaultCurrency,
+          },
+        });
+      }
+
+      // Ensure that the backend returns products with the 'currency' field
+      if (response.data && Array.isArray(response.data.products)) {
+        setProducts(response.data.products);
+      } else {
+        setError('Invalid response from server.');
+      }
+    } catch (err) {
+      console.error('Error fetching products:', err);
+      setError('Failed to fetch products. Please try again later.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="product-list p-4">
+      <div className="search-bar mb-6">
+        <div className="flex flex-col md:flex-row items-center gap-4">
+          {/* Text-based search */}
+          <input
+            type="text"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            placeholder="Search for products..."
+            className="border p-2 rounded flex-1"
+          />
+
+          {/* Image-based search */}
+          <input
+            type="file"
+            accept="image/*"
+            onChange={handleImageChange}
+            className="border p-2 rounded"
+          />
+
+          <button
+            onClick={handleSearch}
+            className="p-2 bg-blue-500 text-white rounded hover:bg-blue-600"
+            disabled={loading}
+          >
+            {loading ? 'Searching...' : 'Search'}
+          </button>
+        </div>
+      </div>
+
+      {error && <p className="text-red-500 mb-4">{error}</p>}
+
+      {!loading && products.length === 0 && !error && (
+        <p className="text-gray-700">No products found. Try a different search term or upload an image.</p>
+      )}
+
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+        {products.map((product) => (
+          <ProductCard key={product.id} product={product} />
+        ))}
+      </div>
+    </div>
+  );
+};
+
+export default ProductList;
+
+
+
+================================================================================
+File: ProtectedRoute.tsx
+Path: src\components\ProtectedRoute.tsx
+================================================================================
+
+// src/components/ProtectedRoute.tsx
+
+import React from 'react';
+import { Navigate, useLocation } from 'react-router-dom';
+import { useSelector } from 'react-redux';
+import type { RootState } from '../store';
+
+interface ProtectedRouteProps {
+  children: JSX.Element;
+}
+
+const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
+  const { isAuthenticated } = useSelector((state: RootState) => state.auth);
+  const location = useLocation();
+
+  if (!isAuthenticated) {
+    return <Navigate to="/login" state={{ from: location.pathname }} replace />;
+  }
+
+  return children;
+};
+
+export default ProtectedRoute;
+
+
+
+================================================================================
+File: currency.ts
+Path: src\constants\currency.ts
+================================================================================
+
+// src/constants/currency.ts
+
+export const DEFAULT_CURRENCY = 'USD';
+
+
+
+================================================================================
+File: SearchContext.tsx
+Path: src\context\SearchContext.tsx
+================================================================================
+
+// src/context/SearchContext.tsx
+
+import React, { createContext, useContext, useState } from 'react';
+import type { Product } from '../types';
+
+interface SearchContextType {
+  searchResults: Product[];
+  setSearchResults: (results: Product[]) => void;
+  searchImage: string | null;
+  setSearchImage: (image: string | null) => void;
+}
+
+const SearchContext = createContext<SearchContextType | undefined>(undefined);
+
+export function SearchProvider({ children }: { children: React.ReactNode }) {
+  const [searchResults, setSearchResults] = useState<Product[]>([]);
+  const [searchImage, setSearchImage] = useState<string | null>(null);
+
+  return (
+    <SearchContext.Provider value={{ 
+      searchResults, 
+      setSearchResults, 
+      searchImage, 
+      setSearchImage 
+    }}>
+      {children}
+    </SearchContext.Provider>
+  );
+}
+
+// eslint-disable-next-line react-refresh/only-export-components
+export function useSearch(): SearchContextType {
+  const context = useContext(SearchContext);
+  if (context === undefined) {
+    throw new Error('useSearch must be used within a SearchProvider');
+  }
+  return context;
+}
+
+
+
+================================================================================
+File: useAuth.ts
+Path: src\hooks\useAuth.ts
+================================================================================
+
+import { useSelector, useDispatch } from 'react-redux';
+import { useNavigate, useLocation } from 'react-router-dom';
+import type { RootState } from '../store';
+import { useEffect } from 'react';
+import { refreshAccessToken } from '../utils/api';
+import { setCredentials, logout } from '../store/authSlice';
+import { clearAuthData } from '../utils/storage';
+import { toast } from 'react-toastify';
+import { User } from '../types';
+
+export function useAuth() {
+  const { isAuthenticated, token, user } = useSelector((state: RootState) => state.auth);
+  const navigate = useNavigate();
+  const location = useLocation();
+  const dispatch = useDispatch();
+
+  useEffect(() => {
+    const interval = setInterval(async () => {
+      if (isAuthenticated && token) {
+        try {
+          const data = await refreshAccessToken();
+          // Assuming the backend returns the user info upon token refresh
+          // If not, you might need to fetch user info separately
+          const updatedUser: User | null = user; // Replace with actual user data if available
+
+          // Update access token in localStorage and Redux store
+          localStorage.setItem('token', data.access_token);
+          dispatch(setCredentials({ user: updatedUser, token: data.access_token }));
+          console.log('Access token refreshed');
+        } catch (error) {
+          console.error('Failed to refresh access token:', error);
+          dispatch(logout());
+          clearAuthData();
+          navigate('/login', { state: { from: location.pathname } });
+          toast.error('Session expired. Please log in again.');
+        }
+      }
+    }, 30 * 60 * 1000); // Refresh every 30 minutes
+
+    return () => clearInterval(interval);
+  }, [isAuthenticated, token, user, navigate, location.pathname, dispatch]);
+
+  const requireAuth = (callback: () => void) => {
+    if (!isAuthenticated) {
+      navigate('/login', { state: { from: location.pathname } });
+      return;
+    }
+    callback();
+  };
+
+  return {
+    isAuthenticated,
+    requireAuth
+  };
+}
+
+
+================================================================================
+File: Landing.tsx
+Path: src\pages\Landing.tsx
+================================================================================
+
+// src/pages/Landing.tsx
+
+import { useNavigate } from 'react-router-dom';
+import { Search } from 'lucide-react';
+import { useSelector } from 'react-redux';
+import type { RootState } from '../store';
+
+export default function Landing() {
+  const navigate = useNavigate();
+  const { isAuthenticated } = useSelector((state: RootState) => state.auth);
+
+  const handleStartSearching = () => {
+    if (isAuthenticated) {
+      navigate('/upload');
+    } else {
+      navigate('/login', { state: { from: '/upload' } });
+    }
+  };
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-20">
+        <div className="text-center">
+          <Search className="w-16 h-16 text-white mx-auto mb-6" />
+          <h1 className="text-4xl tracking-tight font-extrabold text-white sm:text-5xl md:text-6xl">
+            Search for anything
+            <span className="block text-indigo-200">with just an image</span>
+          </h1>
+          <p className="mt-3 max-w-md mx-auto text-base text-indigo-100 sm:text-lg md:mt-5 md:text-xl md:max-w-3xl">
+            Upload a photo and discover where to buy similar products. Save your favorites to your wishlist.
+          </p>
+          <div className="mt-10">
+            <button 
+              className="inline-flex items-center px-6 py-3 border border-transparent text-base font-medium rounded-md text-indigo-700 bg-white hover:bg-indigo-50 md:py-4 md:text-lg md:px-10"
+              onClick={handleStartSearching}
+            >
+              Start Searching
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+
+
+================================================================================
+File: Login.tsx
+Path: src\pages\Login.tsx
+================================================================================
+
+import { Link } from 'react-router-dom';
+import AuthForm from '../components/AuthForm';
+export default function Login() {
+  return (
+    <div className="min-h-[calc(100vh-4rem)] flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8 bg-gray-50">
+      <div className="max-w-md w-full space-y-8">
+        <div>
+          <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
+            Sign in to your account
+          </h2>
+          <p className="mt-2 text-center text-sm text-gray-600">
+            Or{' '}
+            <Link to="/signup" className="font-medium text-indigo-600 hover:text-indigo-500">
+              create a new account
+            </Link>
+          </p>
+        </div>
+        <AuthForm type="login" />
+      </div>
+    </div>
+  );
+}
+
+
+================================================================================
+File: Signup.tsx
+Path: src\pages\Signup.tsx
+================================================================================
+
+import { Link } from 'react-router-dom';
+import AuthForm from '../components/AuthForm';
+export default function Signup() {
+  return (
+    <div className="min-h-[calc(100vh-4rem)] flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8 bg-gray-50">
+      <div className="max-w-md w-full space-y-8">
+        <div>
+          <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
+            Create your account
+          </h2>
+          <p className="mt-2 text-center text-sm text-gray-600">
+            Already have an account?{' '}
+            <Link to="/login" className="font-medium text-indigo-600 hover:text-indigo-500">
+              Sign in
+            </Link>
+          </p>
+        </div>
+        <AuthForm type="signup" />
+      </div>
+    </div>
+  );
+}
+
+
+================================================================================
+File: Upload.tsx
+Path: src\pages\Upload.tsx
+================================================================================
+
+// src/pages/Upload.tsx
+
+import { useState } from 'react';
+import ImageDropzone from '../components/ImageDropzone';
+import ProductCard from '../components/ProductCard';
+import Loader from '../components/Loader';
+import ErrorDisplay from '../components/ErrorDisplay';
+import { useSearch } from '../context/SearchContext';
+import { analyzeImage } from '../utils/api';
+
+export default function Upload() {
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const { searchResults, setSearchResults, searchImage, setSearchImage } =
+    useSearch();
+
+  const handleImageUpload = async (file: File) => {
+    setIsAnalyzing(true);
+    setError(null);
+
+    try {
+      // Preview the uploaded image
+      const imageUrl = URL.createObjectURL(file);
+      setSearchImage(imageUrl);
+
+      // Analyze image without geolocation parameters
+      const data = await analyzeImage(file);
+      setSearchResults(data.products || []);
+    } catch (err) {
+      setError(
+        err instanceof Error
+          ? err.message
+          : 'Something went wrong. Please try again.'
+      );
+      setSearchResults([]);
+      setSearchImage(null);
+    } finally {
+      setIsAnalyzing(false);
+    }
+  };
+
+  return (
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      {!searchImage ? (
+        <div className="max-w-3xl mx-auto mb-8">
+          <ImageDropzone onImageUpload={handleImageUpload} />
+        </div>
+      ) : (
+        <div className="mb-8 flex items-center justify-between">
+          <div className="flex items-center space-x-4">
+            <img
+              src={searchImage}
+              alt="Uploaded"
+              className="w-24 h-24 object-cover rounded-lg"
+            />
+            <button
+              onClick={() => {
+                setSearchImage(null);
+                setSearchResults([]);
+              }}
+              className="text-sm text-gray-600 hover:text-gray-900"
+            >
+              Upload different image
+            </button>
+          </div>
+        </div>
+      )}
+
+      {error && <ErrorDisplay error={error} onRetry={() => setSearchImage(null)} />}
+
+      {isAnalyzing && <Loader message="Analyzing your image..." />}
+
+      {searchResults.length > 0 && (
+        <div className="grid grid-cols-1 xs:grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 mt-8">
+          {searchResults.map((product) => (
+            <ProductCard key={product.id} product={product} />
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+
+
+================================================================================
+File: Wishlist.tsx
+Path: src\pages\Wishlist.tsx
+================================================================================
+
+import React, { useEffect } from 'react';
+import { useDispatch, useSelector } from 'react-redux';
+import { Heart } from 'lucide-react';
+import ProductCard from '../components/ProductCard';
+import { getWishlist, removeFromWishlist as removeFromWishlistApi } from '../utils/api';
+import { setWishlist, removeFromWishlist } from '../store/wishlistSlice';
+import type { RootState } from '../store';
+import type { Product } from '../types';
+import { toast } from 'react-toastify';
+
+export default function Wishlist() {
+  const dispatch = useDispatch();
+  const { isAuthenticated } = useSelector((state: RootState) => state.auth);
+  const wishlistItems = useSelector((state: RootState) => state.wishlist.items);
+  const [isLoading, setIsLoading] = React.useState<boolean>(true); // Local state for loading
+
+  const handleRemoveItem = async (productId: string) => {
+    try {
+      await removeFromWishlistApi(productId);
+      dispatch(removeFromWishlist(productId));
+      toast.success('Item removed from wishlist');
+    } catch (error) {
+      console.error('Failed to remove from wishlist:', error);
+      toast.error('Failed to remove item from wishlist');
+    }
+  };
+
+  useEffect(() => {
+    const fetchWishlist = async () => {
+      try {
+        const response = await getWishlist();
+        console.log('Fetched wishlist:', response.wishlist); // Debugging line
+        dispatch(setWishlist(response.wishlist || []));
+      } catch (error) {
+        console.error('Error fetching wishlist:', error);
+        toast.error('Failed to load wishlist');
+      } finally {
+        setIsLoading(false);
+      }
+    };
+  
+    if (isAuthenticated) {
+      fetchWishlist();
+    } else {
+      // Optionally, clear the wishlist if not authenticated
+      dispatch(setWishlist([]));
+      setIsLoading(false);
+    }
+  }, [dispatch, isAuthenticated]);
+
+  if (!isAuthenticated) {
+    return (
+      <div className="min-h-[calc(100vh-4rem)] flex flex-col items-center justify-center">
+        <Heart className="w-16 h-16 text-gray-300 mb-4" />
+        <h2 className="text-2xl font-semibold text-gray-900">Please Log In</h2>
+        <p className="mt-2 text-gray-600">Log in to view and manage your wishlist.</p>
+      </div>
+    );
+  }
+
+  if (isLoading) {
+    return (
+      <div className="min-h-[calc(100vh-4rem)] flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
+      </div>
+    );
+  }
+
+  if (wishlistItems.length === 0) {
+    return (
+      <div className="min-h-[calc(100vh-4rem)] flex flex-col items-center justify-center">
+        <Heart className="w-16 h-16 text-gray-300 mb-4" />
+        <h2 className="text-2xl font-semibold text-gray-900">Your Wishlist is Empty</h2>
+        <p className="mt-2 text-gray-600">Start adding products to create your collection.</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <h1 className="text-2xl font-bold text-gray-900 mb-8">My Wishlist</h1>
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+        {wishlistItems.map((product: Product) => (
+          <ProductCard 
+            key={product.id} 
+            product={product} 
+            isWishlist 
+            onRemove={handleRemoveItem}
+          />
+        ))}
+      </div>
+    </div>
+  );
+}
+
+
+
+================================================================================
+File: authSlice.ts
+Path: src\store\authSlice.ts
+================================================================================
+
+// src/store/authSlice.ts
+
+import { createSlice, PayloadAction } from '@reduxjs/toolkit';
+import { clearAuthData } from '../utils/storage';
+import type { AuthState, User } from '../types';
+
+const initialState: AuthState = {
+  user: null, // Allow user to be null initially
+  token: null,
+  isAuthenticated: false,
+};
+
+const authSlice = createSlice({
+  name: 'auth',
+  initialState,
+  reducers: {
+    setCredentials: (
+      state,
+      action: PayloadAction<{ user: User | null; token: string }>
+    ) => {
+      state.user = action.payload.user;
+      state.token = action.payload.token;
+      state.isAuthenticated = !!action.payload.token;
+    },
+    logout: (state) => {
+      clearAuthData();
+      state.user = null;
+      state.token = null;
+      state.isAuthenticated = false;
+    },
+  },
+});
+
+export const { setCredentials, logout } = authSlice.actions;
+export default authSlice.reducer;
+
+
+
+================================================================================
+File: index.ts
+Path: src\store\index.ts
+================================================================================
+
+// src/store/index.ts
+
+import { configureStore } from '@reduxjs/toolkit';
+import authReducer from './authSlice';
+import wishlistReducer from './wishlistSlice';
+// import geolocationReducer from './GeolocationSlice'; // Removed
+import {
+  persistStore,
+  persistReducer,
+  FLUSH,
+  REHYDRATE,
+  PAUSE,
+  PERSIST,
+  PURGE,
+  REGISTER,
+} from 'redux-persist';
+import storage from 'redux-persist/lib/storage'; // defaults to localStorage for web
+
+// Configuration for persisting the auth slice
+const authPersistConfig = {
+  key: 'auth',
+  storage: storage,
+  whitelist: ['user', 'token', 'isAuthenticated'],
+};
+
+// Configuration for persisting the wishlist slice
+const wishlistPersistConfig = {
+  key: 'wishlist',
+  storage: storage,
+  whitelist: ['items'],
+};
+
+// Configuration for persisting the geolocation slice
+// const geolocationPersistConfig = {
+//   key: 'geolocation',
+//   storage: storage,
+//   whitelist: ['countryCode', 'currency'],
+// };
+
+// Create persisted reducers
+const persistedAuthReducer = persistReducer(authPersistConfig, authReducer);
+const persistedWishlistReducer = persistReducer(wishlistPersistConfig, wishlistReducer);
+// const persistedGeolocationReducer = persistReducer(geolocationPersistConfig, geolocationReducer); // Removed
+
+// Configure the store with persisted reducers
+export const store = configureStore({
+  reducer: {
+    auth: persistedAuthReducer,
+    wishlist: persistedWishlistReducer,
+    // geolocation: persistedGeolocationReducer, // Removed
+    // Add other reducers here
+  },
+  middleware: (getDefaultMiddleware) =>
+    getDefaultMiddleware({
+      serializableCheck: {
+        // Ignore redux-persist actions to prevent warnings
+        ignoredActions: [FLUSH, REHYDRATE, PAUSE, PERSIST, PURGE, REGISTER],
+      },
+    }),
+});
+
+// Export persistor for use in the app
+export const persistor = persistStore(store);
+
+// Define RootState and AppDispatch types
+export type RootState = ReturnType<typeof store.getState>;
+export type AppDispatch = typeof store.dispatch;
+
+
+
+================================================================================
+File: wishlistSlice.ts
+Path: src\store\wishlistSlice.ts
+================================================================================
+
+// src/store/wishlistSlice.ts
+
+import { createSlice, PayloadAction } from '@reduxjs/toolkit';
+import type { Product } from '../types';
+
+interface WishlistState {
+  items: Product[];
+}
+
+const initialState: WishlistState = {
+  items: [],
+};
+
+const wishlistSlice = createSlice({
+  name: 'wishlist',
+  initialState,
+  reducers: {
+    setWishlist: (state, action: PayloadAction<Product[]>) => {
+      state.items = action.payload;
+    },
+    addToWishlist: (state, action: PayloadAction<Product>) => {
+      // Prevent duplicates based on unique 'id'
+      const exists = state.items.find(item => item.id === action.payload.id);
+      if (!exists) {
+        state.items.push(action.payload);
+      }
+    },
+    removeFromWishlist: (state, action: PayloadAction<string>) => {
+      state.items = state.items.filter(item => item.id !== action.payload);
+    },
+    clearWishlist: (state) => {
+      state.items = [];
+    },
+  },
+});
+
+export const { setWishlist, addToWishlist, removeFromWishlist, clearWishlist } = wishlistSlice.actions;
+export default wishlistSlice.reducer;
+
+
+
+================================================================================
+File: index.ts
+Path: src\types\index.ts
+================================================================================
+
+// src/types/index.ts
+
+export interface Product {
+  id: string;
+  title: string;
+  price: number;
+  currency: string; // Ensure currency is included
+  platform: string;
+  imageUrl: string;
+  sourceLink: string;
+}
+
+export interface User {
+  email: string;
+  token: string;
+  isAuthenticated: boolean;
+}
+
+export interface AuthState {
+  user: User | null;
+  token: string | null;
+  isAuthenticated: boolean;
+}
+
+export interface WishlistState {
+  items: Product[];
+}
+
+
+
+================================================================================
+File: api.ts
+Path: src\utils\api.ts
+================================================================================
+
+// src/utils/api.ts
+
+import axios from 'axios';
+import type { Product } from '../types';
+import { store } from '../store';
+import { logout } from '../store/authSlice';
+import { clearAuthData } from './storage';
+import { toast } from 'react-toastify';
+
+// 1) Pull API_URL from environment
+const API_URL = import.meta.env.VITE_API_URL || 'http://127.0.0.1:5000';
+
+// 2) Create axios instance
+const api = axios.create({
+  baseURL: API_URL,
+  headers: { 'Content-Type': 'application/json' },
+});
+
+// 3) Add request interceptor for auth token
+api.interceptors.request.use((config) => {
+  const token = localStorage.getItem('token'); // same key used in your 'storage.ts'
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
+  }
+  return config;
+});
+
+// 4) Add response interceptor to handle token refresh
+api.interceptors.response.use(
+  response => response,
+  async error => {
+    const originalRequest = error.config;
+
+    if (error.response?.status === 401 && !originalRequest._retry) {
+      originalRequest._retry = true;
+      const refreshToken = localStorage.getItem('refresh_token');
+
+      if (refreshToken) {
+        try {
+          const response = await axios.post(`${API_URL}/refresh`, {}, {
+            headers: { 'Authorization': `Bearer ${refreshToken}` }
+          });
+          const newAccessToken = response.data.access_token;
+          localStorage.setItem('token', newAccessToken);
+          api.defaults.headers.common['Authorization'] = `Bearer ${newAccessToken}`;
+          originalRequest.headers['Authorization'] = `Bearer ${newAccessToken}`;
+          return api(originalRequest);
+        } catch (refreshError) {
+          // Refresh token is invalid, log out the user
+          store.dispatch(logout());
+          clearAuthData();
+          toast.error('Session expired. Please log in again.');
+          return Promise.reject(refreshError);
+        }
+      } else {
+        // No refresh token, log out the user
+        store.dispatch(logout());
+        clearAuthData();
+        toast.error('Session expired. Please log in again.');
+      }
+    }
+
+    return Promise.reject(error);
+  }
+);
+
+// ---------------------------------------------
+// ANALYZE IMAGE
+// ---------------------------------------------
+// src/utils/api.ts
+
+// ...
+
+export const analyzeImage = async (file: File) => {
+  // Set default values
+  const defaultCountryCode = 'US';
+  const defaultCurrency = 'USD';
+
+  // Upload a file to /analyze-image with query params
+  const formData = new FormData();
+  formData.append('image', file);
+
+  // Make POST request with query params
+  const response = await api.post('/analyze-image', formData, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+    params: { 
+      countryCode: defaultCountryCode, 
+      currency: defaultCurrency 
+    },
+  });
+  // Return the data from backend
+  return response.data; 
+  // Expecting { products: [...], search_terms: [...], ... } 
+};
+
+// ---------------------------------------------
+// LOGIN
+// ---------------------------------------------
+export const login = async (email: string, password: string) => {
+  // POST /login
+  const response = await api.post('/login', { email, password });
+  return response.data; // { access_token, refresh_token }
+};
+
+// ---------------------------------------------
+// SIGNUP
+// ---------------------------------------------
+export const signup = async (username: string, email: string, password: string) => {
+  // POST /register
+  const response = await api.post('/register', { username, email, password });
+  return response.data; // { message: "User registered successfully" }
+};
+
+// ---------------------------------------------
+// REFRESH TOKEN
+// ---------------------------------------------
+export const refreshAccessToken = async () => {
+  const refreshToken = localStorage.getItem('refresh_token');
+  if (!refreshToken) throw new Error('No refresh token available');
+
+  const response = await api.post('/refresh', {}, {
+    headers: { 'Authorization': `Bearer ${refreshToken}` }
+  });
+  return response.data; // { access_token }
+};
+
+// ---------------------------------------------
+// WISHLIST
+// ---------------------------------------------
+export const getWishlist = async () => {
+  // GET /wishlist-protected
+  const response = await api.get('/wishlist-protected');
+  return response.data; // e.g., { wishlist: [...], count: n }
+};
+
+export const addToWishlist = async (product: Product) => {
+  const response = await api.post('/wishlist-protected', { 
+    itemId: product.id,
+    title: product.title,
+    price: product.price,
+    currency: product.currency, // Ensure currency is sent
+    platform: product.platform,
+    imageUrl: product.imageUrl,
+    sourceLink: product.sourceLink,  // Ensure sourceLink is sent
+  });
+  return response.data;
+};
+
+export const removeFromWishlist = async (productId: string) => {
+  if (!productId) {
+    throw new Error('Invalid productId');
+  }
+
+  try {
+    const response = await api.delete(`/wishlist-protected`, {
+      params: { itemId: productId }
+    });
+    return response.data;
+  } catch (error) {
+    console.error('Error removing from wishlist:', error);
+    throw error; // Rethrow to handle in the component
+  }
+};
+
+
+
+================================================================================
+File: storage.ts
+Path: src\utils\storage.ts
+================================================================================
+
+import type { User } from '../types';
+
+export const TOKEN_KEY = 'token';
+export const USER_KEY = 'auth_user';
+
+export const saveAuthData = (token: string, user: User) => {
+  localStorage.setItem(TOKEN_KEY, token);
+  localStorage.setItem(USER_KEY, JSON.stringify(user));
+};
+
+export const clearAuthData = () => {
+  localStorage.removeItem(TOKEN_KEY);
+  localStorage.removeItem(USER_KEY);
+};
+
+export const getStoredAuth = () => {
+  const token = localStorage.getItem(TOKEN_KEY);
+  const userStr = localStorage.getItem(USER_KEY);
+  
+  if (!token || !userStr) return null;
+  
+  try {
+    const user = JSON.parse(userStr);
+    return { token, user };
+  } catch {
+    clearAuthData();
+    return null;
+  }
+};
+
+
+================================================================================
+File: wishlist.ts
+Path: src\utils\wishlist.ts
+================================================================================
+
+// Mock wishlist data for development
+let mockWishlist: string[] = [];
+
+export const getWishlistItems = async () => {
+  // Simulate API delay
+  await new Promise(resolve => setTimeout(resolve, 300));
+  return mockWishlist;
+};
+
+export const addWishlistItem = async (productId: string) => {
+  if (!mockWishlist.includes(productId)) {
+    mockWishlist.push(productId);
+  }
+  return mockWishlist;
+};
+
+export const removeWishlistItem = async (productId: string) => {
+  mockWishlist = mockWishlist.filter(id => id !== productId);
+  return mockWishlist;
+};
+

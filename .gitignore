@@ -6,3 +6,5 @@ AI-Visual-Product-Search--backend/.env
 AI-Visual-Product-Search--backend/__pycache__/
 *.log
 .DS_Store" > .gitignore
+.env
+.env.production
