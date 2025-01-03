@@ -44,9 +44,9 @@ EBAY_APPID = os.getenv('EBAY_APPID')
 EBAY_DEVID = os.getenv('EBAY_DEVID')
 EBAY_CERTID = os.getenv('EBAY_CERTID')
 EBAY_USERTOKEN = os.getenv('EBAY_USERTOKEN')
-EXCHANGERATE_API_KEY = os.getenv('EXCHANGERATE_API_KEY')
-IPAGEO_GEOLOCATION_API_KEY = os.getenv('IPAGEO_GEOLOCATION_API_KEY')
 ALLOWED_ORIGINS = os.getenv("ALLOWED_ORIGINS", "*").split(',')
+=======
+>>>>>>> 098a552af779a5d0b6ff8cd90d2052cde17b30dc
 
 ###############################################################################
 # LOGGING SETUP
