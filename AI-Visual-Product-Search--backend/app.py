@@ -29,6 +29,19 @@ from bs4 import BeautifulSoup
 from urllib.parse import urlparse
 
 ###############################################################################
+# LOGGING SETUP
+###############################################################################
+logging.basicConfig(
+    level=logging.INFO,  # Change to DEBUG for more verbose output during troubleshooting
+    format='%(asctime)s [%(levelname)s] %(message)s',
+    handlers=[
+        logging.FileHandler("app.log"),
+        logging.StreamHandler()
+    ]
+)
+logger = logging.getLogger(__name__)
+
+###############################################################################
 # CONFIGURATION
 ###############################################################################
 
@@ -55,30 +68,21 @@ if service_account_json:
     # Define a path to store the service account file
     service_account_path = "/tmp/service_account.json"  # Using /tmp is suitable for Render's ephemeral filesystem
 
-    # Write the JSON content to the file
-    with open(service_account_path, "w") as f:
-        f.write(service_account_json)
+    try:
+        # Write the JSON content to the file
+        with open(service_account_path, "w") as f:
+            f.write(service_account_json)
+        logger.info("Google Cloud credentials have been written to the temporary file.")
 
-    # Set the GOOGLE_APPLICATION_CREDENTIALS environment variable to point to the file
-    os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = service_account_path
-    logger = logging.getLogger(__name__)
-    logger.info("Google Cloud credentials have been set.")
+        # Set the GOOGLE_APPLICATION_CREDENTIALS environment variable to point to the file
+        os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = service_account_path
+        logger.info(f"GOOGLE_APPLICATION_CREDENTIALS set to {service_account_path}")
+    except Exception as e:
+        logger.error(f"Failed to write GOOGLE_APPLICATION_CREDENTIALS: {e}")
+        raise EnvironmentError("Failed to set GOOGLE_APPLICATION_CREDENTIALS.")
 else:
-    logging.getLogger(__name__).error("SERVICE_ACCOUNT_JSON not set.")
+    logger.error("SERVICE_ACCOUNT_JSON not set.")
     raise EnvironmentError("SERVICE_ACCOUNT_JSON not set.")
-
-###############################################################################
-# LOGGING SETUP
-###############################################################################
-logging.basicConfig(
-    level=logging.INFO,  # Change to DEBUG for more verbose output during troubleshooting
-    format='%(asctime)s [%(levelname)s] %(message)s',
-    handlers=[
-        logging.FileHandler("app.log"),
-        logging.StreamHandler()
-    ]
-)
-logger = logging.getLogger(__name__)
 
 ###############################################################################
 # FLASK APP CONFIGURATION
@@ -125,14 +129,29 @@ api = Api(app)
 ###############################################################################
 
 # Initialize MongoDB client
-client = MongoClient(app.config["MONGO_URI"])
-db = client["visual_search_engine"]
+try:
+    client = MongoClient(app.config["MONGO_URI"])
+    db = client["visual_search_engine"]
+    logger.info("Connected to MongoDB successfully.")
+except Exception as e:
+    logger.error(f"Failed to connect to MongoDB: {e}")
+    raise
 
 # Initialize JWT Manager
-jwt = JWTManager(app)
+try:
+    jwt = JWTManager(app)
+    logger.info("JWT Manager initialized successfully.")
+except Exception as e:
+    logger.error(f"Failed to initialize JWT Manager: {e}")
+    raise
 
 # Ensure upload folder exists
-os.makedirs(app.config["UPLOAD_FOLDER"], exist_ok=True)
+try:
+    os.makedirs(app.config["UPLOAD_FOLDER"], exist_ok=True)
+    logger.info(f"Upload folder '{app.config['UPLOAD_FOLDER']}' is ready.")
+except Exception as e:
+    logger.error(f"Failed to create upload folder '{app.config['UPLOAD_FOLDER']}': {e}")
+    raise
 
 ###############################################################################
 # REAL GOOGLE VISION DETECTION
@@ -441,9 +460,13 @@ class Register(Resource):
             logger.error(f"Registration failed: User already exists ({user['email']})")
             return {"error": "User already exists"}, 400
 
-        db["users"].insert_one(user)
-        logger.info(f"User registered successfully: {user['email']}")
-        return {"message": "User registered successfully"}, 201
+        try:
+            db["users"].insert_one(user)
+            logger.info(f"User registered successfully: {user['email']}")
+            return {"message": "User registered successfully"}, 201
+        except Exception as e:
+            logger.error(f"Error registering user {user['email']}: {str(e)}")
+            return {"error": "Failed to register user"}, 500
 
 class Login(Resource):
     def post(self):
@@ -464,21 +487,29 @@ class Login(Resource):
             logger.warning(f"Login failed: Incorrect password for email ({data.get('email')})")
             return {"error": "Invalid email or password"}, 401
 
-        access_token = create_access_token(identity=user["email"])
-        refresh_token = create_refresh_token(identity=user["email"])
-        logger.info(f"User logged in successfully: {user['email']}")
-        return {
-            "access_token": access_token,
-            "refresh_token": refresh_token
-        }, 200
+        try:
+            access_token = create_access_token(identity=user["email"])
+            refresh_token = create_refresh_token(identity=user["email"])
+            logger.info(f"User logged in successfully: {user['email']}")
+            return {
+                "access_token": access_token,
+                "refresh_token": refresh_token
+            }, 200
+        except Exception as e:
+            logger.error(f"Error generating tokens for user {user['email']}: {str(e)}")
+            return {"error": "Failed to generate tokens"}, 500
 
 class RefreshTokenResource(Resource):
     @jwt_required(refresh=True)
     def post(self):
-        current_user = get_jwt_identity()
-        new_access_token = create_access_token(identity=current_user)
-        logger.info(f"Access token refreshed for user: {current_user}")
-        return {"access_token": new_access_token}, 200
+        try:
+            current_user = get_jwt_identity()
+            new_access_token = create_access_token(identity=current_user)
+            logger.info(f"Access token refreshed for user: {current_user}")
+            return {"access_token": new_access_token}, 200
+        except Exception as e:
+            logger.error(f"Error refreshing token for user {current_user}: {str(e)}")
+            return {"error": "Failed to refresh token"}, 500
 
 ###############################################################################
 # WISHLIST RESOURCE
@@ -790,7 +821,13 @@ def allowed_file(filename):
 ###############################################################################
 
 if __name__ == "__main__":
-    if app.config.get('DEBUG', False):
-        app.run(host='0.0.0.0', port=5000, debug=True)
-    else:
-        serve(app, host='0.0.0.0', port=5000)
+    try:
+        if app.config.get('DEBUG', False):
+            logger.info("Starting Flask app in DEBUG mode.")
+            app.run(host='0.0.0.0', port=5000, debug=True)
+        else:
+            logger.info("Starting Flask app with Waitress server.")
+            serve(app, host='0.0.0.0', port=5000)
+    except Exception as e:
+        logger.critical(f"Failed to start the application: {str(e)}")
+        raise
