@@ -32,9 +32,10 @@ from urllib.parse import urlparse
 # CONFIGURATION
 ###############################################################################
 
-load_dotenv()  # Load environment variables from .env
+# Load environment variables from .env file
+load_dotenv()
 
-# Your keys
+# Retrieve environment variables
 MONGO_URI = os.getenv("MONGO_URI")
 JWT_SECRET_KEY = os.getenv("JWT_SECRET_KEY")
 BING_SUBSCRIPTION_KEY = os.getenv("BING_SUBSCRIPTION_KEY")
@@ -48,20 +49,24 @@ EXCHANGERATE_API_KEY = os.getenv('EXCHANGERATE_API_KEY')
 IPAGEO_GEOLOCATION_API_KEY = os.getenv('IPAGEO_GEOLOCATION_API_KEY')
 ALLOWED_ORIGINS = os.getenv("ALLOWED_ORIGINS", "*").split(',')
 
-
+# Handle GOOGLE_APPLICATION_CREDENTIALS
 service_account_json = os.getenv("GOOGLE_APPLICATION_CREDENTIALS")
 if service_account_json:
-    with open("service_account.json", "w") as f:
-        f.write(service_account_json)
-    os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = "service_account.json"
+    # Ensure the service account file exists
+    if not os.path.isfile(service_account_json):
+        raise EnvironmentError("GOOGLE_APPLICATION_CREDENTIALS file does not exist.")
+    os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = service_account_json
 else:
-    logging.Logger.error("GOOGLE_APPLICATION_CREDENTIALS not set.")
+    logging.getLogger(__name__).error("GOOGLE_APPLICATION_CREDENTIALS not set.")
     raise EnvironmentError("GOOGLE_APPLICATION_CREDENTIALS not set.")
+
 ###############################################################################
 # LOGGING SETUP
 ###############################################################################
+
+# Configure logging to output to both file and console
 logging.basicConfig(
-    level=logging.INFO,  # Set to INFO for production, DEBUG for development
+    level=logging.INFO,  # Change to DEBUG for more verbose output during troubleshooting
     format='%(asctime)s [%(levelname)s] %(message)s',
     handlers=[
         logging.FileHandler("app.log"),
@@ -89,7 +94,8 @@ class DevelopmentConfig(Config):
 
 class ProductionConfig(Config):
     DEBUG = False
-    CORS_ORIGINS = ALLOWED_ORIGINS  # Restrict to specified origins in production
+    # Strip any whitespace and ensure no trailing slashes
+    CORS_ORIGINS = [origin.strip() for origin in ALLOWED_ORIGINS]
 
 # Determine environment
 ENV = os.getenv('FLASK_ENV', 'development')
@@ -98,20 +104,26 @@ if ENV == 'production':
 else:
     app_config = DevelopmentConfig
 
+# Initialize Flask app
 app = Flask(__name__)
 app.config.from_object(app_config)
 
-api = Api(app)
-
-# Enable CORS
+# Enable CORS BEFORE setting up API routes
 CORS(app, resources={r"/*": {"origins": app_config.CORS_ORIGINS}})
+logger.info(f"Allowed CORS Origins: {app_config.CORS_ORIGINS}")
+
+# Initialize Flask-RESTful API
+api = Api(app)
 
 ###############################################################################
 # MONGO + JWT SETUP
 ###############################################################################
+
+# Initialize MongoDB client
 client = MongoClient(app.config["MONGO_URI"])
 db = client["visual_search_engine"]
 
+# Initialize JWT Manager
 jwt = JWTManager(app)
 
 # Ensure upload folder exists
@@ -656,7 +668,9 @@ class ImageAnalysis(Resource):
                     user_country_code = 'IN'  # India
                     user_currency = 'INR'
 
-                    ebay_results = asyncio.run(ebay_scraper.search_products(ebay_search_term_cleaned, user_country_code, user_currency, max_results=10))
+                    ebay_results = asyncio.run(ebay_scraper.search_products(
+                        ebay_search_term_cleaned, user_country_code, user_currency, max_results=10
+                    ))
                     logger.info(f"[EBAY] Found {len(ebay_results)} results for '{ebay_search_term_cleaned}'.")
                     all_results.extend(ebay_results)
                 except Exception as ebay_exc:
