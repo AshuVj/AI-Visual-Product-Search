@@ -1,0 +1,15 @@
+# .dockerignore
+
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+env/
+venv/
+ENV/
+*.env
+*.git
+*.gitignore
+*.DS_Store
+*.log
+service_account.json

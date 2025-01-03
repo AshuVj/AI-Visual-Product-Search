@@ -16,7 +16,7 @@ from flask_jwt_extended import (
     JWTManager, create_access_token, create_refresh_token,
     jwt_required, get_jwt_identity
 )
-
+from waitress import serve
 from pymongo import MongoClient
 from werkzeug.utils import secure_filename
 from datetime import datetime, timedelta
@@ -44,10 +44,19 @@ EBAY_APPID = os.getenv('EBAY_APPID')
 EBAY_DEVID = os.getenv('EBAY_DEVID')
 EBAY_CERTID = os.getenv('EBAY_CERTID')
 EBAY_USERTOKEN = os.getenv('EBAY_USERTOKEN')
+EXCHANGERATE_API_KEY = os.getenv('EXCHANGERATE_API_KEY')
+IPAGEO_GEOLOCATION_API_KEY = os.getenv('IPAGEO_GEOLOCATION_API_KEY')
 ALLOWED_ORIGINS = os.getenv("ALLOWED_ORIGINS", "*").split(',')
-=======
->>>>>>> 098a552af779a5d0b6ff8cd90d2052cde17b30dc
 
+
+service_account_json = os.getenv("GOOGLE_APPLICATION_CREDENTIALS")
+if service_account_json:
+    with open("service_account.json", "w") as f:
+        f.write(service_account_json)
+    os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = "service_account.json"
+else:
+    logging.Logger.error("GOOGLE_APPLICATION_CREDENTIALS not set.")
+    raise EnvironmentError("GOOGLE_APPLICATION_CREDENTIALS not set.")
 ###############################################################################
 # LOGGING SETUP
 ###############################################################################
@@ -762,4 +771,7 @@ def allowed_file(filename):
 ###############################################################################
 
 if __name__ == "__main__":
-    app.run(host='0.0.0.0', port=5000, debug=app.config.get('DEBUG', False))
+    if app.config.get('DEBUG', False):
+        app.run(host='0.0.0.0', port=5000, debug=True)
+    else:
+        serve(app, host='0.0.0.0', port=5000)

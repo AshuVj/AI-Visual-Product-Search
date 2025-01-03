@@ -1,23 +1,43 @@
-# Use an official Python runtime as a parent image
+# Dockerfile
+
+# 1. Use an official Python runtime as a parent image
 FROM python:3.9-slim
 
-# Set environment variables
+# 2. Set environment variables
+# Prevents Python from writing pyc files to disk
 ENV PYTHONDONTWRITEBYTECODE=1
+
+# Ensures that the stdout and stderr streams are unbuffered
 ENV PYTHONUNBUFFERED=1
 
-# Set work directory
+# 3. Set work directory
 WORKDIR /app
 
-# Install dependencies
-COPY requirements.txt .
-RUN pip install --upgrade pip
-RUN pip install --no-cache-dir -r requirements.txt
+# 4. Install system dependencies
+# - gcc and other build tools might be required for some Python packages
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends gcc && \
+    rm -rf /var/lib/apt/lists/*
 
-# Copy project
+# 5. Install Python dependencies
+# Copy only requirements to leverage Docker cache
+COPY requirements.txt .
+
+RUN pip install --upgrade pip && \
+    pip install --no-cache-dir -r requirements.txt
+
+# 6. Copy the application code to the container
 COPY . .
 
-# Expose port
+# 7. Create a non-root user for security
+RUN adduser --disabled-password myuser
+USER myuser
+
+# 8. Expose the port the app runs on
 EXPOSE 5000
 
-# Command to run the app using Gunicorn
-CMD ["gunicorn", "app:app", "-w", "4", "-b", "0.0.0.0:5000"]
+# 9. Define environment variable for Flask
+ENV FLASK_ENV=production
+
+# 10. Command to run the application using Waitress
+CMD ["waitress-serve", "--host=0.0.0.0", "--port=5000", "app:app"]
