@@ -1,18 +1,18 @@
 // src/components/ProductList.tsx
 
 import React, { useState } from 'react';
-import axios from 'axios';
 import ProductCard from './ProductCard';
-import type { Product } from '../types'; // Import the Product interface
+import type { Product } from '../types';
+import { analyzeImage, searchProducts } from '../utils/api'; // Import the centralized API functions
 
 const ProductList: React.FC = () => {
   // Removed geolocation selectors
   // const { countryCode, currency } = useSelector((state: RootState) => state.geolocation);
-  
-  // Optionally, set default values if needed
+
+  // Set default values if geolocation is not used
   const defaultCountryCode = 'US';
   const defaultCurrency = 'USD';
-  
+
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
@@ -35,54 +35,29 @@ const ProductList: React.FC = () => {
     setError(null);
 
     try {
-      let response;
+      let data;
 
       if (selectedImage) {
         // Image-based search
-        const formData = new FormData();
-        formData.append('image', selectedImage);
-
-        response = await axios.post('/analyze-image', formData, {
-          headers: {
-            'Content-Type': 'multipart/form-data',
-          },
-          // Removed geolocation params
-          // params: {
-          //   countryCode,
-          //   currency,
-          // },
-          params: {
-            // If backend still expects countryCode and currency, provide default values
-            countryCode: defaultCountryCode,
-            currency: defaultCurrency,
-          },
-        });
+        data = await analyzeImage(selectedImage);
       } else {
         // Text-based search
-        response = await axios.post('/search', { 
-          query: searchTerm 
-        }, {
-          // Removed geolocation params
-          // params: {
-          //   countryCode,
-          //   currency,
-          // },
-          params: {
-            countryCode: defaultCountryCode,
-            currency: defaultCurrency,
-          },
-        });
+        data = await searchProducts(searchTerm, defaultCountryCode, defaultCurrency);
       }
 
       // Ensure that the backend returns products with the 'currency' field
-      if (response.data && Array.isArray(response.data.products)) {
-        setProducts(response.data.products);
+      if (data && Array.isArray(data.products)) {
+        setProducts(data.products);
       } else {
         setError('Invalid response from server.');
       }
-    } catch (err) {
-      console.error('Error fetching products:', err);
-      setError('Failed to fetch products. Please try again later.');
+    } catch (err: unknown) {
+      // Since errors are handled and thrown in api.ts, simply set the error message
+      if (err instanceof Error) {
+        setError(err.message);
+      } else {
+        setError('Failed to fetch products. Please try again later.');
+      }
     } finally {
       setLoading(false);
     }
@@ -122,7 +97,9 @@ const ProductList: React.FC = () => {
       {error && <p className="text-red-500 mb-4">{error}</p>}
 
       {!loading && products.length === 0 && !error && (
-        <p className="text-gray-700">No products found. Try a different search term or upload an image.</p>
+        <p className="text-gray-700">
+          No products found. Try a different search term or upload an image.
+        </p>
       )}
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
