@@ -32,7 +32,7 @@ from urllib.parse import urlparse
 # CONFIGURATION
 ###############################################################################
 
-# Load environment variables from .env file
+# Load environment variables from .env file (if applicable)
 load_dotenv()
 
 # Retrieve environment variables
@@ -49,22 +49,27 @@ EXCHANGERATE_API_KEY = os.getenv('EXCHANGERATE_API_KEY')
 IPAGEO_GEOLOCATION_API_KEY = os.getenv('IPAGEO_GEOLOCATION_API_KEY')
 ALLOWED_ORIGINS = os.getenv("ALLOWED_ORIGINS", "*").split(',')
 
-# Handle GOOGLE_APPLICATION_CREDENTIALS
-service_account_json = os.getenv("GOOGLE_APPLICATION_CREDENTIALS")
+# Handle GOOGLE_APPLICATION_CREDENTIALS from the secret
+service_account_json = os.getenv("SERVICE_ACCOUNT_JSON")
 if service_account_json:
-    # Ensure the service account file exists
-    if not os.path.isfile(service_account_json):
-        raise EnvironmentError("GOOGLE_APPLICATION_CREDENTIALS file does not exist.")
-    os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = service_account_json
+    # Define a path to store the service account file
+    service_account_path = "/tmp/service_account.json"  # Using /tmp is suitable for Render's ephemeral filesystem
+
+    # Write the JSON content to the file
+    with open(service_account_path, "w") as f:
+        f.write(service_account_json)
+
+    # Set the GOOGLE_APPLICATION_CREDENTIALS environment variable to point to the file
+    os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = service_account_path
+    logger = logging.getLogger(__name__)
+    logger.info("Google Cloud credentials have been set.")
 else:
-    logging.getLogger(__name__).error("GOOGLE_APPLICATION_CREDENTIALS not set.")
-    raise EnvironmentError("GOOGLE_APPLICATION_CREDENTIALS not set.")
+    logging.getLogger(__name__).error("SERVICE_ACCOUNT_JSON not set.")
+    raise EnvironmentError("SERVICE_ACCOUNT_JSON not set.")
 
 ###############################################################################
 # LOGGING SETUP
 ###############################################################################
-
-# Configure logging to output to both file and console
 logging.basicConfig(
     level=logging.INFO,  # Change to DEBUG for more verbose output during troubleshooting
     format='%(asctime)s [%(levelname)s] %(message)s',
