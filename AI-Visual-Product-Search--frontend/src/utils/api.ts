@@ -8,7 +8,7 @@ import { clearAuthData } from './storage';
 import { toast } from 'react-toastify';
 
 // 1) Pull API_URL from environment
-const API_URL = import.meta.env.VITE_API_URL || 'http://127.0.0.1:5000';
+const API_URL = import.meta.env.VITE_API_URL || '/api';
 
 // 2) Create axios instance
 const api = axios.create({
@@ -67,14 +67,8 @@ api.interceptors.response.use(
 // ---------------------------------------------
 // ANALYZE IMAGE
 // ---------------------------------------------
-// src/utils/api.ts
-
-// ...
 
 export const analyzeImage = async (file: File) => {
-  // Set default values
-  const defaultCountryCode = 'US';
-  const defaultCurrency = 'USD';
 
   // Upload a file to /analyze-image with query params
   const formData = new FormData();
@@ -84,8 +78,6 @@ export const analyzeImage = async (file: File) => {
   const response = await api.post('/analyze-image', formData, {
     headers: { 'Content-Type': 'multipart/form-data' },
     params: { 
-      countryCode: defaultCountryCode, 
-      currency: defaultCurrency 
     },
   });
   // Return the data from backend
@@ -102,7 +94,7 @@ export const login = async (email: string, password: string) => {
   return response.data; // { access_token, refresh_token }
 };
 
-// ---------------------------------------------
+// ------------A---------------------------------
 // SIGNUP
 // ---------------------------------------------
 export const signup = async (username: string, email: string, password: string) => {
